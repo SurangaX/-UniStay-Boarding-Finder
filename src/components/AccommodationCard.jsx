@@ -23,9 +23,9 @@ export default function AccommodationCard({ acc }) {
       </div>
       
       <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg text-slate-900 dark:text-white leading-tight line-clamp-1">{acc.title}</h3>
-          <span className="font-bold text-brand-600 dark:text-brand-400 text-lg">LKR {acc.rent_amount}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mo</span></span>
+        <div className="flex justify-between items-start mb-2 gap-2">
+          <h3 className="font-semibold text-lg text-slate-900 dark:text-white leading-tight line-clamp-1 flex-1">{acc.title}</h3>
+          <div className="font-bold text-brand-600 dark:text-brand-400 text-lg whitespace-nowrap shrink-0">LKR {acc.rent_amount}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mo</span></div>
         </div>
         
         <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mb-4">

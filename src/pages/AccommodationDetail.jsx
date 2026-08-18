@@ -72,15 +72,15 @@ export default function AccommodationDetail() {
       {/* Title & Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{acc.title}</h1>
-          <div className="flex items-center text-slate-600 gap-4">
-            <span className="flex items-center"><MapPin className="w-4 h-4 mr-1 text-slate-400" /> {acc.distance_to_uni} km to campus</span>
-            {acc.is_verified && <span className="flex items-center text-brand-600 font-medium"><ShieldCheck className="w-4 h-4 mr-1" /> Verified</span>}
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{acc.title}</h1>
+          <div className="flex items-center text-slate-600 dark:text-slate-400 gap-4">
+            <span className="flex items-center"><MapPin className="w-4 h-4 mr-1 text-slate-400 dark:text-slate-500" /> {acc.distance_to_uni} km to campus</span>
+            {acc.is_verified && <span className="flex items-center text-brand-600 dark:text-brand-400 font-medium"><ShieldCheck className="w-4 h-4 mr-1" /> Verified</span>}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-extrabold text-brand-600">${acc.rent_amount}</div>
-          <div className="text-slate-500 text-sm">per month</div>
+          <div className="text-3xl font-extrabold text-brand-600 dark:text-brand-400">LKR {acc.rent_amount}</div>
+          <div className="text-slate-500 dark:text-slate-400 text-sm">per month</div>
         </div>
       </div>
 
@@ -92,18 +92,18 @@ export default function AccommodationDetail() {
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
           {/* Details */}
-          <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
-            <h2 className="text-xl font-bold mb-4 text-slate-900">About this place</h2>
-            <p className="text-slate-700 whitespace-pre-line leading-relaxed mb-6">
+          <section className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-8">
+            <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">About this place</h2>
+            <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed mb-6">
               {acc.description}
             </p>
             
-            <h3 className="font-semibold text-slate-900 mb-3">Facilities</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Facilities</h3>
             <div className="flex flex-wrap gap-3">
               {acc.facilities && Object.entries(acc.facilities).map(([key, value]) => {
                 if (value) {
                   return (
-                    <span key={key} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm capitalize border border-slate-200">
+                    <span key={key} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm capitalize border border-slate-200 dark:border-slate-600">
                       {key}
                     </span>
                   );
@@ -114,25 +114,25 @@ export default function AccommodationDetail() {
           </section>
 
           {/* Reviews */}
-          <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 className="text-xl font-bold mb-6 text-slate-900">Student Reviews</h2>
+          <section className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+            <h2 className="text-xl font-bold mb-6 text-slate-900 dark:text-white">Student Reviews</h2>
             
             <div className="space-y-6 mb-8">
               {acc.reviews && acc.reviews.length > 0 ? (
                 acc.reviews.map((r, idx) => (
-                  <div key={idx} className="border-b border-slate-100 pb-6 last:border-0 last:pb-0">
+                  <div key={idx} className="border-b border-slate-100 dark:border-slate-700 pb-6 last:border-0 last:pb-0">
                     <div className="flex items-center mb-2">
-                      <div className="w-10 h-10 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center font-bold mr-3">
+                      <div className="w-10 h-10 bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 rounded-full flex items-center justify-center font-bold mr-3">
                         {r.student_name ? r.student_name.charAt(0) : 'S'}
                       </div>
                       <div>
-                        <div className="font-medium text-slate-900">{r.student_name || 'Student'}</div>
+                        <div className="font-medium text-slate-900 dark:text-white">{r.student_name || 'Student'}</div>
                         <div className="flex text-amber-400 text-sm">
                           {Array.from({ length: r.rating }).map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
                         </div>
                       </div>
                     </div>
-                    <p className="text-slate-600 pl-13">{r.comment}</p>
+                    <p className="text-slate-600 dark:text-slate-300 pl-13">{r.comment}</p>
                   </div>
                 ))
               ) : (
@@ -141,10 +141,10 @@ export default function AccommodationDetail() {
             </div>
 
             {user?.role === 'student' && (
-              <form onSubmit={submitReview} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h4 className="font-medium mb-3">Leave a Review</h4>
+              <form onSubmit={submitReview} className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                <h4 className="font-medium mb-3 dark:text-white">Leave a Review</h4>
                 <div className="mb-3">
-                  <label className="block text-sm mb-1 text-slate-600">Rating (1-5)</label>
+                  <label className="block text-sm mb-1 text-slate-600 dark:text-slate-300">Rating (1-5)</label>
                   <input type="number" min="1" max="5" value={rating} onChange={e => setRating(e.target.value)} className="input-field w-24" />
                 </div>
                 <div className="mb-3">
@@ -164,9 +164,9 @@ export default function AccommodationDetail() {
 
         {/* Sidebar */}
         <div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-6">
-            <h3 className="font-bold text-lg mb-4 text-slate-900">Interested?</h3>
-            <p className="text-slate-600 text-sm mb-6">Contact the landlord to ask questions or arrange a viewing.</p>
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sticky top-6">
+            <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Interested?</h3>
+            <p className="text-slate-600 dark:text-slate-300 text-sm mb-6">Contact the landlord to ask questions or arrange a viewing.</p>
             {user?.role === 'student' ? (
               <button className="w-full btn-primary py-3">Message Landlord</button>
             ) : (
