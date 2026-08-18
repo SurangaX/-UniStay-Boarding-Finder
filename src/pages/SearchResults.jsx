@@ -61,7 +61,7 @@ export default function SearchResults() {
                 <input 
                   type="text" 
                   placeholder="e.g. Colombo"
-                  className="w-full border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-2 border"
+                  className="input-field"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />
@@ -69,7 +69,7 @@ export default function SearchResults() {
               <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Rent (LKR)</label>
                 <select 
-                  className="w-full border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-2 border"
+                  className="input-field"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
                 >
