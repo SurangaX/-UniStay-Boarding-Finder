@@ -1,16 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ShieldCheck, MapPin, Home as HomeIcon } from 'lucide-react';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+
+const libraries = ['places'];
 
 export default function Home() {
   const [distance, setDistance] = useState('');
   const [budget, setBudget] = useState('');
+  const [autocomplete, setAutocomplete] = useState(null);
   const navigate = useNavigate();
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries
+  });
+
+  const onLoad = (autoC) => setAutocomplete(autoC);
+  
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      setDistance(place.formatted_address || place.name || '');
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (distance) params.append('distance', distance);
+    if (distance) params.append('location', distance);
     if (budget) params.append('budget', budget);
     navigate(`/search?${params.toString()}`);
   };
@@ -38,30 +57,46 @@ export default function Home() {
           {/* Quick Search - Premium Pill Design */}
           <div className="bg-white dark:bg-slate-900 rounded-full shadow-2xl p-2 w-full max-w-3xl flex flex-col md:flex-row items-center border border-slate-100 dark:border-slate-800 transition-colors">
             <div className="flex-1 w-full px-6 py-2 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-t-3xl md:rounded-l-full md:rounded-tr-none transition-colors cursor-text">
-              <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Location / Distance</label>
+              <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Location</label>
               <div className="relative flex items-center">
                 <MapPin className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" />
-                <input 
-                  type="number" 
-                  placeholder="Max distance (km)"
-                  className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
-                  value={distance}
-                  onChange={(e) => setDistance(e.target.value)}
-                />
+                {isLoaded ? (
+                  <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged} className="w-full">
+                    <input 
+                      type="text" 
+                      placeholder="University, city, or address..."
+                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
+                      value={distance}
+                      onChange={(e) => setDistance(e.target.value)}
+                    />
+                  </Autocomplete>
+                ) : (
+                  <input 
+                    type="text" 
+                    placeholder="Loading Maps..."
+                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
+                    disabled
+                  />
+                )}
               </div>
             </div>
             
             <div className="flex-1 w-full px-6 py-2 group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-text">
-              <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Budget</label>
+              <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Max Budget (LKR)</label>
               <div className="relative flex items-center">
-                <span className="font-medium text-slate-400 mr-1 flex-shrink-0">$</span>
-                <input 
-                  type="number" 
-                  placeholder="Max rent per month"
-                  className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
+                <span className="font-medium text-slate-400 mr-2 flex-shrink-0">Rs.</span>
+                <select 
+                  className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white text-sm md:text-base outline-none appearance-none cursor-pointer"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
-                />
+                >
+                  <option value="" className="text-slate-900 dark:bg-slate-800 dark:text-white">Any Budget</option>
+                  <option value="10000" className="text-slate-900 dark:bg-slate-800 dark:text-white">Under 10,000 /mo</option>
+                  <option value="20000" className="text-slate-900 dark:bg-slate-800 dark:text-white">10,000 - 20,000 /mo</option>
+                  <option value="30000" className="text-slate-900 dark:bg-slate-800 dark:text-white">20,000 - 30,000 /mo</option>
+                  <option value="40000" className="text-slate-900 dark:bg-slate-800 dark:text-white">30,000 - 40,000 /mo</option>
+                  <option value="50000" className="text-slate-900 dark:bg-slate-800 dark:text-white">40,000+ /mo</option>
+                </select>
               </div>
             </div>
             

@@ -8,6 +8,8 @@
   --color-brand-700: #0f766e;
 }
 
+@custom-variant dark (&:is(.dark *));
+
 @layer base {
   body {
     @apply text-slate-800 bg-slate-50 antialiased;
