@@ -1,29 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ShieldCheck, MapPin, Home as HomeIcon } from 'lucide-react';
-import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
-
-const libraries = ['places'];
 
 export default function Home() {
   const [distance, setDistance] = useState('');
   const [budget, setBudget] = useState('');
-  const [autocomplete, setAutocomplete] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const wrapperRef = useRef(null);
   const navigate = useNavigate();
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries
-  });
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const onLoad = (autoC) => setAutocomplete(autoC);
-  
-  const onPlaceChanged = () => {
-    if (autocomplete !== null) {
-      const place = autocomplete.getPlace();
-      setDistance(place.formatted_address || place.name || '');
+  const fetchLocations = async (query) => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
     }
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+      const data = await res.json();
+      setSuggestions(data);
+    } catch (err) {
+      console.error('Error fetching locations:', err);
+    }
+  };
+
+  const handleLocationChange = (e) => {
+    const val = e.target.value;
+    setDistance(val);
+    setShowSuggestions(true);
+    
+    // Debounce basic implementation
+    const timer = setTimeout(() => fetchLocations(val), 300);
+    return () => clearTimeout(timer);
+  };
+
+  const selectLocation = (place) => {
+    setDistance(place.display_name);
+    setShowSuggestions(false);
   };
 
   const handleSearch = (e) => {
@@ -56,28 +79,36 @@ export default function Home() {
           
           {/* Quick Search - Premium Pill Design */}
           <div className="bg-white dark:bg-slate-900 rounded-full shadow-2xl p-2 w-full max-w-3xl flex flex-col md:flex-row items-center border border-slate-100 dark:border-slate-800 transition-colors">
-            <div className="flex-1 w-full px-6 py-2 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-t-3xl md:rounded-l-full md:rounded-tr-none transition-colors cursor-text">
+            <div className="flex-1 w-full px-6 py-2 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-t-3xl md:rounded-l-full md:rounded-tr-none transition-colors cursor-text" ref={wrapperRef}>
               <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Location</label>
               <div className="relative flex items-center">
                 <MapPin className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" />
-                {isLoaded ? (
-                  <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged} className="w-full">
-                    <input 
-                      type="text" 
-                      placeholder="University, city, or address..."
-                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
-                      value={distance}
-                      onChange={(e) => setDistance(e.target.value)}
-                    />
-                  </Autocomplete>
-                ) : (
+                <div className="relative w-full">
                   <input 
                     type="text" 
-                    placeholder="Loading Maps..."
+                    placeholder="University, city, or address..."
                     className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
-                    disabled
+                    value={distance}
+                    onChange={handleLocationChange}
+                    onFocus={() => setShowSuggestions(true)}
                   />
-                )}
+                  
+                  {/* Custom Autocomplete Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-50 left-0 right-0 mt-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
+                      {suggestions.map((place) => (
+                        <li 
+                          key={place.place_id}
+                          onClick={() => selectLocation(place)}
+                          className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-left text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                        >
+                          <div className="font-medium text-slate-900 dark:text-white truncate">{place.name}</div>
+                          <div className="text-xs text-slate-500 truncate">{place.display_name}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
             
