@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MapPin, ShieldCheck, Loader2, Star } from 'lucide-react';
 
@@ -10,6 +10,11 @@ export default function AccommodationDetail() {
   const [loading, setLoading] = useState(true);
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
+  const [showModal, setShowModal] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const { token } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch(`/api/accommodations?id=${id}`)
@@ -50,6 +55,37 @@ export default function AccommodationDetail() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const submitMessage = async (e) => {
+    e.preventDefault();
+    if (!messageText.trim()) return;
+    setSendingMsg(true);
+
+    try {
+      const res = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          accommodation_id: id,
+          message: messageText
+        })
+      });
+
+      if (res.ok) {
+        navigate('/inbox');
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Failed to send message');
+        setSendingMsg(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setSendingMsg(false);
     }
   };
 
@@ -168,7 +204,7 @@ export default function AccommodationDetail() {
             <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Interested?</h3>
             <p className="text-slate-600 dark:text-slate-300 text-sm mb-6">Contact the landlord to ask questions or arrange a viewing.</p>
             {user?.role === 'student' ? (
-              <button className="w-full btn-primary py-3">Message Landlord</button>
+              <button onClick={() => setShowModal(true)} className="w-full btn-primary py-3">Message Landlord</button>
             ) : (
               <div className="p-3 bg-amber-50 text-amber-800 rounded text-sm text-center">
                 Log in as a student to send inquiries.
@@ -177,6 +213,39 @@ export default function AccommodationDetail() {
           </div>
         </div>
       </div>
+
+      {/* Message Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+              <h3 className="font-bold text-lg dark:text-white">Message Landlord</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
+            </div>
+            <form onSubmit={submitMessage} className="p-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Ask about {acc.title}. The landlord will reply in your Inbox.
+              </p>
+              <textarea 
+                className="input-field min-h-[120px] mb-4" 
+                placeholder="Hi, I'm interested in this room..." 
+                value={messageText} 
+                onChange={e => setMessageText(e.target.value)}
+                required
+              />
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={sendingMsg || !messageText.trim()} className="btn-primary flex items-center gap-2">
+                  {sendingMsg && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Send Message
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

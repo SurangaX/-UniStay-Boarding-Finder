@@ -48,6 +48,9 @@ export default function Navbar() {
                       Browse
                     </Link>
                   )}
+                  <Link to="/inbox" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                    Inbox
+                  </Link>
                   
                   <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
