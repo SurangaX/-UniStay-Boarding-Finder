@@ -26,7 +26,7 @@ export default function Home() {
       return;
     }
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=lk&limit=5`);
       const data = await res.json();
       setSuggestions(data);
     } catch (err) {
