@@ -36,6 +36,9 @@ export default function Navbar() {
             {!loading && (
               user ? (
                 <div className="flex items-center gap-4">
+                  <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                    Home
+                  </Link>
                   {user.role === 'landlord' ? (
                     <Link to="/dashboard" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                       Dashboard
@@ -68,6 +71,9 @@ export default function Navbar() {
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
+                  <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                    Home
+                  </Link>
                   <Link to="/login" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
                     Log in
                   </Link>
