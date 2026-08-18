@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import SearchResults from './pages/SearchResults';
 import AccommodationDetail from './pages/AccommodationDetail';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
               <Route path="/search" element={<SearchResults />} />
               <Route path="/accommodation/:id" element={<AccommodationDetail />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
             </Routes>
           </main>
         </div>

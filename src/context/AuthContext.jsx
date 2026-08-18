@@ -5,37 +5,68 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [users, setUsers] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Token invalid');
+        return res.json();
+      })
       .then(data => {
-        if (Array.isArray(data)) {
-          setUsers(data);
-          // Default to the first student for testing
-          const student = data.find(u => u.role === 'student');
-          if (student) setUser(student);
-        } else {
-          console.error('API Error:', data);
-        }
+        setUser(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching users', err);
+        console.error(err);
+        localStorage.removeItem('token');
         setLoading(false);
       });
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const loginAs = (role) => {
-    const targetUser = users.find(u => u.role === role);
-    if (targetUser) setUser(targetUser);
+  const login = async (email, password) => {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    return data.user;
+  };
+
+  const register = async (userData) => {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    return data.user;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, users, loginAs, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

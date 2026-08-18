@@ -1,11 +1,17 @@
-import { Link } from 'react-router-dom';
-import { Home, UserCircle2, Moon, Sun, ArrowRightLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Home, UserCircle2, Moon, Sun, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Navbar() {
-  const { user, loginAs, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 transition-colors duration-200">
@@ -27,37 +33,49 @@ export default function Navbar() {
               {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
 
-            {!loading && user && (
-              <div className="flex items-center gap-4">
-                {user.role === 'landlord' ? (
-                  <Link to="/dashboard" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
-                    Dashboard
-                  </Link>
-                ) : (
-                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
-                    Browse
-                  </Link>
-                )}
-                
-                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+            {!loading && (
+              user ? (
+                <div className="flex items-center gap-4">
+                  {user.role === 'landlord' ? (
+                    <Link to="/dashboard" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                      Dashboard
+                    </Link>
+                  ) : (
+                    <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                      Browse
+                    </Link>
+                  )}
+                  
+                  <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
-                <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <UserCircle2 className="h-6 w-6 text-slate-400" />
-                  <span className="hidden sm:block font-medium">
-                    {user.name}
-                  </span>
+                  <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <UserCircle2 className="h-6 w-6 text-slate-400" />
+                    <span className="hidden sm:block font-medium">
+                      {user.name}
+                    </span>
+                    <span className="hidden sm:inline-block ml-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 border border-brand-200 dark:border-brand-800/50">
+                      {user.role}
+                    </span>
+                  </div>
+                  
+                  <button 
+                    onClick={handleLogout}
+                    className="p-2 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    title="Log out"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </button>
                 </div>
-                
-                {/* Custom Role Switcher */}
-                <button 
-                  onClick={() => loginAs(user.role === 'student' ? 'landlord' : 'student')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 dark:hover:border-brand-500 hover:text-brand-600 dark:hover:text-brand-400 transition-all shadow-sm"
-                  title="Switch Role"
-                >
-                  <ArrowRightLeft className="h-3 w-3" />
-                  {user.role === 'student' ? 'Student' : 'Landlord'}
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <Link to="/login" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                    Log in
+                  </Link>
+                  <Link to="/register" className="btn-primary text-sm">
+                    Sign up
+                  </Link>
+                </div>
+              )
             )}
           </div>
         </div>
