@@ -13,10 +13,14 @@ export const AuthProvider = ({ children }) => {
     fetch('/api/users')
       .then(res => res.json())
       .then(data => {
-        setUsers(data);
-        // Default to the first student for testing
-        const student = data.find(u => u.role === 'student');
-        if (student) setUser(student);
+        if (Array.isArray(data)) {
+          setUsers(data);
+          // Default to the first student for testing
+          const student = data.find(u => u.role === 'student');
+          if (student) setUser(student);
+        } else {
+          console.error('API Error:', data);
+        }
         setLoading(false);
       })
       .catch(err => {
