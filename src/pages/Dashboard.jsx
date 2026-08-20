@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, MapPin } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [photoInputType, setPhotoInputType] = useState('upload'); // 'upload' or 'url'
   const [photosText, setPhotosText] = useState('');
   const [base64Photos, setBase64Photos] = useState([]);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     if (user?.role === 'landlord') {
@@ -161,6 +162,43 @@ export default function Dashboard() {
 
   const removeBase64Photo = (indexToRemove) => {
     setBase64Photos(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const getLocationFromDevice = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapPosition([latitude, longitude]);
+        
+        // Reverse Geocoding
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.display_name) {
+              const parts = [];
+              if (data.address.road) parts.push(data.address.road);
+              if (data.address.suburb) parts.push(data.address.suburb);
+              if (data.address.city || data.address.town) parts.push(data.address.city || data.address.town);
+              
+              const finalLocation = parts.length > 0 ? parts.join(', ') : data.display_name;
+              setLocation(finalLocation);
+            }
+          })
+          .catch(err => console.error("Geocoding error: ", err))
+          .finally(() => setGettingLocation(false));
+      },
+      (error) => {
+        console.error(error);
+        alert("Unable to retrieve your location. Please check your permissions.");
+        setGettingLocation(false);
+      }
+    );
   };
 
   const saveListing = async (e) => {
@@ -268,9 +306,20 @@ export default function Dashboard() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Location</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium">Location</label>
+                <button 
+                  type="button" 
+                  onClick={getLocationFromDevice}
+                  disabled={gettingLocation}
+                  className="text-xs flex items-center gap-1 text-brand-600 hover:text-brand-700 font-medium disabled:opacity-50"
+                >
+                  {gettingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                  Use My Location
+                </button>
+              </div>
               <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-                Click on the map to automatically get the address, or type it manually.
+                Click on the map or use your device location to automatically get the address.
               </div>
               <div className="h-[250px] mb-3 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 z-10 relative">
                 <MapContainer 
