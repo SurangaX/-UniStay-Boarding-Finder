@@ -109,6 +109,18 @@ export default function AccommodationDetail() {
     }
   };
 
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  // If photos array changes or component re-renders with new acc, ensure selectedPhoto is valid
+  useEffect(() => {
+    if (acc && !acc.error) {
+      const photos = acc.photos && acc.photos.length > 0 ? acc.photos : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000'];
+      if (!photos.includes(selectedPhoto)) {
+        setSelectedPhoto(photos[0]);
+      }
+    }
+  }, [acc, selectedPhoto]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -122,14 +134,6 @@ export default function AccommodationDetail() {
   }
 
   const photos = acc.photos && acc.photos.length > 0 ? acc.photos : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000'];
-  const [selectedPhoto, setSelectedPhoto] = useState(photos[0]);
-
-  // If photos array changes or component re-renders with new acc, ensure selectedPhoto is valid
-  useEffect(() => {
-    if (photos.length > 0 && !photos.includes(selectedPhoto)) {
-      setSelectedPhoto(photos[0]);
-    }
-  }, [photos]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
