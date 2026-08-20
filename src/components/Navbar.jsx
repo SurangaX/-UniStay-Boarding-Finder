@@ -9,8 +9,10 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    if (window.confirm('Are you sure you want to log out?')) {
+      logout();
+      navigate('/login');
+    }
   };
 
   return (
