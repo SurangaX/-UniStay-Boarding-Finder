@@ -25,13 +25,21 @@ export default function Navbar() {
           </div>
           
           <div className="flex items-center gap-3 sm:gap-6">
-            <button 
-              onClick={toggleDarkMode}
-              className="p-2 text-slate-500 hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle Dark Mode"
-            >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
+            <div className="flex items-center gap-2">
+              <Sun className={`h-4 w-4 ${!isDarkMode ? 'text-amber-500' : 'text-slate-400'}`} />
+              <button 
+                onClick={toggleDarkMode}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${isDarkMode ? 'bg-brand-600' : 'bg-slate-300'}`}
+                aria-label="Toggle Dark Mode"
+              >
+                <span
+                  className={`${
+                    isDarkMode ? 'translate-x-6' : 'translate-x-1'
+                  } inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out shadow-sm`}
+                />
+              </button>
+              <Moon className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-slate-400'}`} />
+            </div>
 
             {!loading && (
               user ? (
