@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MapPin, ShieldCheck, Loader2, Star } from 'lucide-react';
 
@@ -256,8 +256,16 @@ export default function AccommodationDetail() {
             {user?.role === 'student' ? (
               <button onClick={() => setShowModal(true)} className="w-full btn-primary py-3">Message Landlord</button>
             ) : (
-              <div className="p-3 bg-amber-50 text-amber-800 rounded text-sm text-center">
-                Log in as a student to send inquiries.
+              <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">Log in as a student to send inquiries.</p>
+                <div className="flex flex-col gap-3">
+                  <Link to="/login" className="w-full btn-primary py-2.5 text-sm justify-center flex items-center">
+                    Log In
+                  </Link>
+                  <Link to="/register" className="w-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 py-2.5 rounded-lg text-sm font-bold transition-colors justify-center flex items-center">
+                    Sign Up
+                  </Link>
+                </div>
               </div>
             )}
           </div>
