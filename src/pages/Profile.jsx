@@ -7,6 +7,9 @@ export default function Profile() {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -23,11 +26,34 @@ export default function Profile() {
       return;
     }
 
+    if (newPassword || currentPassword || confirmPassword) {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        setMessage({ type: 'error', text: 'Please fill in all password fields to change your password.' });
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setMessage({ type: 'error', text: 'New passwords do not match.' });
+        return;
+      }
+      if (newPassword.length < 6) {
+        setMessage({ type: 'error', text: 'New password must be at least 6 characters long.' });
+        return;
+      }
+    }
+
     try {
       setIsSaving(true);
       setMessage({ type: '', text: '' });
-      await updateProfile({ id: user.id, name });
+      await updateProfile({ 
+        id: user.id, 
+        name, 
+        currentPassword: currentPassword || undefined,
+        newPassword: newPassword || undefined
+      });
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Failed to update profile' });
     } finally {
@@ -96,7 +122,7 @@ export default function Profile() {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Personal Details</h3>
               
               {/* Name (Editable) */}
-              <div className="max-w-md">
+              <div className="max-w-md mb-8">
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                   Full Name
                 </label>
@@ -108,6 +134,47 @@ export default function Profile() {
                   required
                   className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
                 />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Change Password</h3>
+              
+              <div className="max-w-md space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    Current Password
+                  </label>
+                  <input 
+                    type="password" 
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    New Password
+                  </label>
+                  <input 
+                    type="password" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    Confirm New Password
+                  </label>
+                  <input 
+                    type="password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
+                  />
+                </div>
               </div>
             </div>
 
