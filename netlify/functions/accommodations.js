@@ -46,11 +46,11 @@ export const handler = async (event) => {
 
     if (event.httpMethod === 'POST') {
       const data = JSON.parse(event.body);
-      const { landlord_id, title, description, rent_amount, distance_to_uni, photos, facilities } = data;
+      const { landlord_id, title, description, location, rent_amount, distance_to_uni, photos, facilities } = data;
 
       const newAcc = await sql`
-        INSERT INTO accommodations (landlord_id, title, description, rent_amount, distance_to_uni, photos, facilities, is_verified)
-        VALUES (${landlord_id}, ${title}, ${description}, ${rent_amount}, ${distance_to_uni}, ${photos}, ${JSON.stringify(facilities)}::jsonb, false)
+        INSERT INTO accommodations (landlord_id, title, description, location, rent_amount, distance_to_uni, photos, facilities, is_verified)
+        VALUES (${landlord_id}, ${title}, ${description}, ${location}, ${rent_amount}, ${distance_to_uni}, ${photos}, ${JSON.stringify(facilities)}::jsonb, false)
         RETURNING *;
       `;
       return { statusCode: 201, body: JSON.stringify(newAcc[0]) };
@@ -58,7 +58,7 @@ export const handler = async (event) => {
 
     if (event.httpMethod === 'PUT') {
       const data = JSON.parse(event.body);
-      const { id, landlord_id, title, description, rent_amount, distance_to_uni, photos, facilities } = data;
+      const { id, landlord_id, title, description, location, rent_amount, distance_to_uni, photos, facilities } = data;
 
       if (!id || !landlord_id) {
         return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
@@ -69,6 +69,7 @@ export const handler = async (event) => {
         SET 
           title = ${title},
           description = ${description},
+          location = ${location},
           rent_amount = ${rent_amount},
           distance_to_uni = ${distance_to_uni},
           photos = ${photos},

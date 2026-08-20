@@ -32,6 +32,7 @@ async function setupDatabase() {
         landlord_id UUID REFERENCES users(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         description TEXT,
+        location VARCHAR(255),
         rent_amount DECIMAL(10, 2) NOT NULL,
         distance_to_uni DECIMAL(5, 2),
         photos TEXT[],
@@ -86,11 +87,12 @@ async function setupDatabase() {
       const studentId = student[0].id;
 
       const acc = await sql`
-        INSERT INTO accommodations (landlord_id, title, description, rent_amount, distance_to_uni, photos, facilities, is_verified)
+        INSERT INTO accommodations (landlord_id, title, description, location, rent_amount, distance_to_uni, photos, facilities, is_verified)
         VALUES (
           ${landlordId}, 
           'Cozy Room Near Campus', 
           'A very nice and cozy room just a 10 minute walk from the university. Perfect for a quiet student.', 
+          'Colombo 07',
           350.00, 
           0.8, 
           ARRAY['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000'],

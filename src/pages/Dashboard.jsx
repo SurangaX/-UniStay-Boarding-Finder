@@ -12,8 +12,10 @@ export default function Dashboard() {
   const [editingId, setEditingId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
   const [rentAmount, setRentAmount] = useState('');
   const [distance, setDistance] = useState('');
+  const [photoInputType, setPhotoInputType] = useState('upload'); // 'upload' or 'url'
   const [photosText, setPhotosText] = useState('');
   const [base64Photos, setBase64Photos] = useState([]);
 
@@ -32,10 +34,12 @@ export default function Dashboard() {
     setEditingId(null);
     setTitle('');
     setDescription('');
+    setLocation('');
     setRentAmount('');
     setDistance('');
     setPhotosText('');
     setBase64Photos([]);
+    setPhotoInputType('upload');
     setShowForm(true);
   };
 
@@ -43,6 +47,7 @@ export default function Dashboard() {
     setEditingId(acc.id);
     setTitle(acc.title);
     setDescription(acc.description || '');
+    setLocation(acc.location || '');
     setRentAmount(acc.rent_amount);
     setDistance(acc.distance_to_uni);
     
@@ -52,6 +57,12 @@ export default function Dashboard() {
     
     setPhotosText(regularUrls.join(', '));
     setBase64Photos(b64Data);
+    
+    // Automatically select input type based on existing data
+    if (b64Data.length > 0) setPhotoInputType('upload');
+    else if (regularUrls.length > 0) setPhotoInputType('url');
+    else setPhotoInputType('upload');
+    
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -80,21 +91,25 @@ export default function Dashboard() {
   const saveListing = async (e) => {
     e.preventDefault();
     
-    // Parse photos from comma separated text
-    const textUrls = photosText
-      .split(',')
-      .map(url => url.trim())
-      .filter(url => url.length > 0);
-      
-    const photos = [...textUrls, ...base64Photos];
+    // Parse photos based on selected type
+    let finalPhotos = [];
+    if (photoInputType === 'url') {
+      finalPhotos = photosText
+        .split(',')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+    } else {
+      finalPhotos = [...base64Photos];
+    }
 
     const payload = {
       landlord_id: user.id,
       title,
       description,
+      location,
       rent_amount: rentAmount,
       distance_to_uni: distance,
-      photos,
+      photos: finalPhotos,
       facilities: { internet: true, water: true }
     };
 
@@ -154,6 +169,10 @@ export default function Dashboard() {
               <label className="block text-sm font-medium mb-1">Description</label>
               <textarea required className="input-field min-h-[100px]" value={description} onChange={e => setDescription(e.target.value)} />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Location</label>
+              <input type="text" placeholder="e.g. Colombo 07" required className="input-field" value={location} onChange={e => setLocation(e.target.value)} />
+            </div>
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-1">Rent Amount (LKR)</label>
@@ -168,43 +187,69 @@ export default function Dashboard() {
             <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
               <label className="block text-sm font-bold mb-3 text-slate-900 dark:text-white">Photos</label>
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Upload Files (Max 5MB per image recommended)</label>
-                <input 
-                  type="file" 
-                  multiple 
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/30 dark:file:text-brand-400 dark:hover:file:bg-brand-900/50"
-                />
+              <div className="flex gap-6 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="photoType" 
+                    value="upload" 
+                    checked={photoInputType === 'upload'} 
+                    onChange={() => setPhotoInputType('upload')}
+                    className="text-brand-600 focus:ring-brand-500"
+                  />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Upload Files</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="photoType" 
+                    value="url" 
+                    checked={photoInputType === 'url'} 
+                    onChange={() => setPhotoInputType('url')}
+                    className="text-brand-600 focus:ring-brand-500"
+                  />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Photo URLs</span>
+                </label>
               </div>
 
-              {base64Photos.length > 0 && (
-                <div className="flex flex-wrap gap-3 mb-4">
-                  {base64Photos.map((b64, idx) => (
-                    <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                      <img src={b64} alt="Upload preview" className="w-full h-full object-cover" />
-                      <button 
-                        type="button"
-                        onClick={() => removeBase64Photo(idx)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                      >
-                        &times;
-                      </button>
+              {photoInputType === 'upload' ? (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Select Images (Max 5MB per image recommended)</label>
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/30 dark:file:text-brand-400 dark:hover:file:bg-brand-900/50"
+                  />
+                  {base64Photos.length > 0 && (
+                    <div className="flex flex-wrap gap-3 mt-4">
+                      {base64Photos.map((b64, idx) => (
+                        <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                          <img src={b64} alt="Upload preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => removeBase64Photo(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Paste Photo URLs (comma-separated)</label>
+                  <textarea 
+                    className="input-field min-h-[60px]" 
+                    placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
+                    value={photosText} 
+                    onChange={e => setPhotosText(e.target.value)} 
+                  />
                 </div>
               )}
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Or add Photo URLs (comma-separated)</label>
-                <textarea 
-                  className="input-field min-h-[60px]" 
-                  placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
-                  value={photosText} 
-                  onChange={e => setPhotosText(e.target.value)} 
-                />
-              </div>
             </div>
 
             <div className="pt-2">

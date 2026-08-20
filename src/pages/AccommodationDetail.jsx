@@ -137,9 +137,12 @@ export default function AccommodationDetail() {
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{acc.title}</h1>
+          <div className="flex items-center text-slate-600 dark:text-slate-400 gap-4 mb-2">
+            {acc.location && <span className="flex items-center font-medium"><MapPin className="w-4 h-4 mr-1 text-brand-500" /> {acc.location}</span>}
+          </div>
           <div className="flex items-center text-slate-600 dark:text-slate-400 gap-4">
-            <span className="flex items-center"><MapPin className="w-4 h-4 mr-1 text-slate-400 dark:text-slate-500" /> {acc.distance_to_uni} km to campus</span>
-            {acc.is_verified && <span className="flex items-center text-brand-600 dark:text-brand-400 font-medium"><ShieldCheck className="w-4 h-4 mr-1" /> Verified</span>}
+            <span className="flex items-center text-sm"> {acc.distance_to_uni} km to campus</span>
+            {acc.is_verified && <span className="flex items-center text-brand-600 dark:text-brand-400 font-medium text-sm"><ShieldCheck className="w-4 h-4 mr-1" /> Verified</span>}
           </div>
         </div>
         <div className="text-right">

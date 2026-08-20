@@ -22,9 +22,10 @@ export default function SearchResults() {
         if (initialLocation) {
           const mainLocation = initialLocation.split(',')[0].toLowerCase().trim();
           filtered = filtered.filter(a => {
+            const locMatch = a.location && a.location.toLowerCase().includes(mainLocation);
             const titleMatch = a.title && a.title.toLowerCase().includes(mainLocation);
             const descMatch = a.description && a.description.toLowerCase().includes(mainLocation);
-            return titleMatch || descMatch;
+            return locMatch || titleMatch || descMatch;
           });
         }
         if (initialBudget) {
