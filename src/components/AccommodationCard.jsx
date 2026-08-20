@@ -11,7 +11,7 @@ export default function AccommodationCard({ acc }) {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
+      <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border ${acc.is_boosted ? 'border-amber-400 dark:border-amber-500 shadow-amber-100 dark:shadow-amber-900/20 shadow-md ring-1 ring-amber-400/50' : 'border-slate-200 dark:border-slate-700'} overflow-hidden hover:shadow-md transition-shadow group flex flex-col`}>
         <div 
           className="relative h-48 overflow-hidden cursor-pointer"
           onClick={() => setShowModal(true)}
@@ -21,12 +21,19 @@ export default function AccommodationCard({ acc }) {
             alt={acc.title} 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          {acc.is_verified && (
-            <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 shadow-sm">
-              <BadgeCheck className="w-4 h-4" />
-              Verified
-            </div>
-          )}
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {acc.is_boosted && (
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full flex items-center gap-1 text-xs font-bold shadow-lg">
+                🔥 Boosted
+              </div>
+            )}
+            {acc.is_verified && (
+              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 shadow-sm">
+                <BadgeCheck className="w-4 h-4" />
+                Verified
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="p-4 flex-1 flex flex-col">

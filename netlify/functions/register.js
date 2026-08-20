@@ -31,7 +31,7 @@ export const handler = async (event) => {
     const result = await sql`
       INSERT INTO users (role, name, email, password_hash, contact_number)
       VALUES (${role}, ${name}, ${email}, ${password_hash}, ${contact_number || null})
-      RETURNING id, role, name, email, contact_number;
+      RETURNING id, role, name, email, contact_number, subscription_tier;
     `;
 
     const user = result[0];

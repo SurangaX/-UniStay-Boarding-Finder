@@ -308,6 +308,11 @@ export default function Dashboard() {
           const newAcc = await res.json();
           setAccommodations([newAcc, ...accommodations]);
           setShowForm(false);
+        } else if (res.status === 403) {
+          const errorData = await res.json();
+          alert(errorData.error || 'Limit reached');
+        } else {
+          alert('Failed to save listing');
         }
       }
     } catch (err) {
@@ -343,10 +348,24 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Landlord Dashboard</h1>
-        <button onClick={showForm ? () => setShowForm(false) : openAddForm} className="btn-primary flex items-center gap-2">
-          <PlusCircle className="w-5 h-5" /> {showForm ? 'Cancel' : 'Add Listing'}
-        </button>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+          Landlord Dashboard
+          {user?.subscription_tier === 'pro' && (
+            <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400 px-2 py-1 rounded-full font-bold uppercase tracking-wide border border-brand-200 dark:border-brand-800">
+              Verified Pro
+            </span>
+          )}
+        </h1>
+        <div className="flex gap-4">
+          {(!user?.subscription_tier || user?.subscription_tier === 'free') && (
+            <button onClick={() => alert('Payment Gateway Integration Coming Soon!')} className="btn-secondary hidden sm:flex items-center gap-2 border-brand-500 text-brand-600 dark:text-brand-400">
+              Upgrade to Pro
+            </button>
+          )}
+          <button onClick={showForm ? () => setShowForm(false) : openAddForm} className="btn-primary flex items-center gap-2">
+            <PlusCircle className="w-5 h-5" /> {showForm ? 'Cancel' : 'Add Listing'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -547,6 +566,11 @@ export default function Dashboard() {
                   </td>
                   <td className="p-4 text-sm">
                     <div className="flex items-center gap-3">
+                      {!acc.is_boosted && (
+                        <button onClick={() => alert('Payment Gateway Integration Coming Soon! This will cost LKR 299.')} className="text-amber-500 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                          Boost
+                        </button>
+                      )}
                       <button onClick={() => openEditForm(acc)} className="text-brand-600 dark:text-brand-400 font-medium hover:underline cursor-pointer">Edit</button>
                       <button onClick={() => deleteListing(acc.id)} className="text-red-600 dark:text-red-400 font-medium hover:underline cursor-pointer">Delete</button>
                     </div>

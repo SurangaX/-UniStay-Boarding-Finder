@@ -35,7 +35,7 @@ export const handler = async (event) => {
 
       if (landlord_id) {
         // Get accommodations for a specific landlord
-        const accs = await sql`SELECT * FROM accommodations WHERE landlord_id = ${landlord_id} ORDER BY created_at DESC`;
+        const accs = await sql`SELECT * FROM accommodations WHERE landlord_id = ${landlord_id} ORDER BY is_boosted DESC, created_at DESC`;
         return { statusCode: 200, body: JSON.stringify(accs) };
       }
 
@@ -51,13 +51,22 @@ export const handler = async (event) => {
       }
 
       // List all verified accommodations for public
-      const accs = await sql`SELECT * FROM accommodations WHERE is_verified = TRUE ORDER BY created_at DESC`;
+      const accs = await sql`SELECT * FROM accommodations WHERE is_verified = TRUE ORDER BY is_boosted DESC, created_at DESC`;
       return { statusCode: 200, body: JSON.stringify(accs) };
     }
 
     if (event.httpMethod === 'POST') {
       const data = JSON.parse(event.body);
       const { landlord_id, title, description, location, rent_amount, distance_to_uni, photos, facilities } = data;
+
+      // Check subscription tier and limits
+      const user = await sql`SELECT subscription_tier FROM users WHERE id = ${landlord_id}`;
+      if (user.length > 0 && user[0].subscription_tier === 'free') {
+        const adCount = await sql`SELECT count(*) FROM accommodations WHERE landlord_id = ${landlord_id}`;
+        if (parseInt(adCount[0].count) >= 1) {
+          return { statusCode: 403, body: JSON.stringify({ error: 'Free tier limit reached. Please upgrade to Pro to post more ads.' }) };
+        }
+      }
 
       const newAcc = await sql`
         INSERT INTO accommodations (landlord_id, title, description, location, rent_amount, distance_to_uni, photos, facilities, is_verified)

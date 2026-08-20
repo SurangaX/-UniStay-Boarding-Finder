@@ -19,7 +19,7 @@ export const handler = async (event) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const sql = neon(process.env.DATABASE_URL);
     
-    const users = await sql`SELECT id, role, name, email, contact_number FROM users WHERE id = ${decoded.id}`;
+    const users = await sql`SELECT id, role, name, email, contact_number, subscription_tier FROM users WHERE id = ${decoded.id}`;
     
     if (users.length === 0) {
       return { statusCode: 404, body: JSON.stringify({ error: 'User not found' }) };

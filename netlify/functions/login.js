@@ -17,7 +17,7 @@ export const handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Email and password are required' }) };
     }
 
-    const users = await sql`SELECT id, role, name, email, contact_number, password_hash FROM users WHERE email = ${email}`;
+    const users = await sql`SELECT id, role, name, email, contact_number, subscription_tier, password_hash FROM users WHERE email = ${email}`;
     
     if (users.length === 0) {
       return { statusCode: 401, body: JSON.stringify({ error: 'Invalid credentials' }) };
