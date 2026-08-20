@@ -6,10 +6,10 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     if (token) {
       fetch('/api/me', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
       .catch(err => {
         console.error(err);
         localStorage.removeItem('token');
+        setToken(null);
         setLoading(false);
       });
     } else {
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     if (!res.ok) throw new Error(data.error || 'Login failed');
     
     localStorage.setItem('token', data.token);
+    setToken(data.token);
     setUser(data.user);
     return data.user;
   };
@@ -56,17 +58,19 @@ export const AuthProvider = ({ children }) => {
     if (!res.ok) throw new Error(data.error || 'Registration failed');
     
     localStorage.setItem('token', data.token);
+    setToken(data.token);
     setUser(data.user);
     return data.user;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
