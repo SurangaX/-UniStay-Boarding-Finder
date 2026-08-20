@@ -39,7 +39,11 @@ export default function Navbar() {
                   <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                     Home
                   </Link>
-                  {user.role === 'landlord' ? (
+                  {user.role === 'admin' ? (
+                    <Link to="/admin" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                      Admin Panel
+                    </Link>
+                  ) : user.role === 'landlord' ? (
                     <Link to="/dashboard" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                       Dashboard
                     </Link>
@@ -48,9 +52,11 @@ export default function Navbar() {
                       Browse
                     </Link>
                   )}
-                  <Link to="/inbox" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
-                    Inbox
-                  </Link>
+                  {user.role !== 'admin' && (
+                    <Link to="/inbox" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                      Inbox
+                    </Link>
+                  )}
                   
                   <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 

@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Inbox from './pages/Inbox';
 
+import AdminDashboard from './pages/AdminDashboard';
+
 function App() {
   return (
     <AuthProvider>
@@ -21,6 +23,7 @@ function App() {
               <Route path="/search" element={<SearchResults />} />
               <Route path="/accommodation/:id" element={<AccommodationDetail />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/inbox" element={<Inbox />} />

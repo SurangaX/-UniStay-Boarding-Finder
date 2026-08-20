@@ -5,7 +5,7 @@ export const handler = async (event) => {
     const sql = neon(process.env.DATABASE_URL);
 
     if (event.httpMethod === 'GET') {
-      const { id, landlord_id } = event.queryStringParameters || {};
+      const { id, landlord_id, admin } = event.queryStringParameters || {};
 
       if (id) {
         // Get specific accommodation with its reviews
@@ -39,8 +39,14 @@ export const handler = async (event) => {
         return { statusCode: 200, body: JSON.stringify(accs) };
       }
 
-      // List all accommodations
-      const accs = await sql`SELECT * FROM accommodations ORDER BY created_at DESC`;
+      if (admin) {
+        // List unverified accommodations for admin
+        const accs = await sql`SELECT * FROM accommodations WHERE is_verified = FALSE ORDER BY created_at ASC`;
+        return { statusCode: 200, body: JSON.stringify(accs) };
+      }
+
+      // List all verified accommodations for public
+      const accs = await sql`SELECT * FROM accommodations WHERE is_verified = TRUE ORDER BY created_at DESC`;
       return { statusCode: 200, body: JSON.stringify(accs) };
     }
 
@@ -80,6 +86,28 @@ export const handler = async (event) => {
 
       if (updatedAcc.length === 0) {
         return { statusCode: 404, body: JSON.stringify({ error: 'Accommodation not found or unauthorized' }) };
+      }
+
+      return { statusCode: 200, body: JSON.stringify(updatedAcc[0]) };
+    }
+
+    if (event.httpMethod === 'PATCH') {
+      const data = JSON.parse(event.body);
+      const { id, is_verified } = data;
+
+      if (!id) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Missing accommodation id' }) };
+      }
+
+      const updatedAcc = await sql`
+        UPDATE accommodations
+        SET is_verified = ${is_verified}
+        WHERE id = ${id}
+        RETURNING *;
+      `;
+
+      if (updatedAcc.length === 0) {
+        return { statusCode: 404, body: JSON.stringify({ error: 'Accommodation not found' }) };
       }
 
       return { statusCode: 200, body: JSON.stringify(updatedAcc[0]) };
