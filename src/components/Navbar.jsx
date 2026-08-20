@@ -25,21 +25,6 @@ export default function Navbar() {
           </div>
           
           <div className="flex items-center gap-3 sm:gap-6">
-            <div className="flex items-center gap-2">
-              <Sun className={`h-4 w-4 ${!isDarkMode ? 'text-amber-500' : 'text-slate-400'}`} />
-              <button 
-                onClick={toggleDarkMode}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${isDarkMode ? 'bg-brand-600' : 'bg-slate-300'}`}
-                aria-label="Toggle Dark Mode"
-              >
-                <span
-                  className={`${
-                    isDarkMode ? 'translate-x-6' : 'translate-x-1'
-                  } inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out shadow-sm`}
-                />
-              </button>
-              <Moon className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-slate-400'}`} />
-            </div>
 
             {!loading && (
               user ? (
@@ -103,6 +88,25 @@ export default function Navbar() {
                 </div>
               )
             )}
+
+            {/* Theme Toggle Switch */}
+            <button 
+              onClick={toggleDarkMode}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}
+              aria-label="Toggle Dark Mode"
+            >
+              <span
+                className={`${
+                  isDarkMode ? 'translate-x-7 bg-slate-900' : 'translate-x-1 bg-white'
+                } inline-flex h-6 w-6 transform items-center justify-center rounded-full transition duration-200 ease-in-out shadow-sm`}
+              >
+                {isDarkMode ? (
+                  <Moon className="h-3.5 w-3.5 text-blue-400" />
+                ) : (
+                  <Sun className="h-3.5 w-3.5 text-amber-500" />
+                )}
+              </span>
+            </button>
           </div>
         </div>
       </div>
