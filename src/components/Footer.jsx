@@ -76,18 +76,6 @@ export default function Footer() {
             </div>
           </div>
         </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-6 text-center">
-          <div className="flex gap-4 items-center">
-            <span className="text-sm font-medium px-4 py-1.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 border border-brand-200 dark:border-brand-800/50 flex items-center gap-2 shadow-sm transition-all hover:shadow-md">
-              Made with <span className="text-red-500 animate-pulse">♥</span> for Students
-            </span>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-500 font-medium">
-            &copy; {currentYear} UniBoarding. All rights reserved.
-          </p>
-        </div>
       </div>
     </footer>
   );
