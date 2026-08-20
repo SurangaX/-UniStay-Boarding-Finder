@@ -22,6 +22,26 @@ export default function AccommodationDetail() {
       .then(data => {
         setAcc(data);
         setLoading(false);
+        
+        if (!data.error) {
+          try {
+            const viewedStr = localStorage.getItem('recently_viewed');
+            let viewed = viewedStr ? JSON.parse(viewedStr) : [];
+            viewed = viewed.filter(v => v.id !== data.id);
+            viewed.unshift({
+              id: data.id,
+              title: data.title,
+              rent_amount: data.rent_amount,
+              distance_to_uni: data.distance_to_uni,
+              photos: data.photos,
+              is_verified: data.is_verified
+            });
+            if (viewed.length > 4) viewed.pop();
+            localStorage.setItem('recently_viewed', JSON.stringify(viewed));
+          } catch (e) {
+            console.error('Error saving recently viewed:', e);
+          }
+        }
       })
       .catch(err => {
         console.error(err);

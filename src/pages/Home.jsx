@@ -1,14 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ShieldCheck, MapPin, Home as HomeIcon } from 'lucide-react';
+import AccommodationCard from '../components/AccommodationCard';
 
 export default function Home() {
   const [distance, setDistance] = useState('');
   const [budget, setBudget] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const viewedStr = localStorage.getItem('recently_viewed');
+      if (viewedStr) {
+        setRecentlyViewed(JSON.parse(viewedStr));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -172,6 +185,20 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Recently Viewed */}
+      {recentlyViewed.length > 0 && (
+        <div className="py-16 bg-white dark:bg-slate-950 transition-colors duration-200 border-t border-slate-100 dark:border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Recently Viewed</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentlyViewed.map(acc => (
+                <AccommodationCard key={acc.id} acc={acc} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
