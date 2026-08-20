@@ -54,9 +54,9 @@ export default function Navbar() {
                   <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
                   <Link 
-                    to={user.role === 'admin' ? '/admin' : user.role === 'landlord' ? '/dashboard' : '/search'}
+                    to="/profile"
                     className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors cursor-pointer group"
-                    title="Go to your dashboard"
+                    title="Manage Profile"
                   >
                     <UserCircle2 className="h-6 w-6 text-slate-400 group-hover:text-brand-500 transition-colors" />
                     <span className="hidden sm:block font-medium">

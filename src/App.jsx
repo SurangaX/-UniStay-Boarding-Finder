@@ -8,7 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Inbox from './pages/Inbox';
-
+import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
@@ -27,6 +27,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/inbox" element={<Inbox />} />
+              <Route path="/profile" element={<Profile />} />
             </Routes>
           </main>
         </div>
