@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [rentAmount, setRentAmount] = useState('');
   const [distance, setDistance] = useState('');
   const [photosText, setPhotosText] = useState('');
+  const [base64Photos, setBase64Photos] = useState([]);
 
   useEffect(() => {
     if (user?.role === 'landlord') {
@@ -34,6 +35,7 @@ export default function Dashboard() {
     setRentAmount('');
     setDistance('');
     setPhotosText('');
+    setBase64Photos([]);
     setShowForm(true);
   };
 
@@ -43,19 +45,48 @@ export default function Dashboard() {
     setDescription(acc.description || '');
     setRentAmount(acc.rent_amount);
     setDistance(acc.distance_to_uni);
-    setPhotosText(acc.photos ? acc.photos.join(', ') : '');
+    
+    const existingPhotos = acc.photos || [];
+    const regularUrls = existingPhotos.filter(p => p.startsWith('http') || p.startsWith('/'));
+    const b64Data = existingPhotos.filter(p => p.startsWith('data:'));
+    
+    setPhotosText(regularUrls.join(', '));
+    setBase64Photos(b64Data);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    Promise.all(files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    })).then(base64Strings => {
+      setBase64Photos(prev => [...prev, ...base64Strings]);
+    }).catch(err => {
+      console.error("Error reading files", err);
+      alert("Failed to read one or more files.");
+    });
+  };
+
+  const removeBase64Photo = (indexToRemove) => {
+    setBase64Photos(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const saveListing = async (e) => {
     e.preventDefault();
     
     // Parse photos from comma separated text
-    const photos = photosText
+    const textUrls = photosText
       .split(',')
       .map(url => url.trim())
       .filter(url => url.length > 0);
+      
+    const photos = [...textUrls, ...base64Photos];
 
     const payload = {
       landlord_id: user.id,
@@ -133,16 +164,49 @@ export default function Dashboard() {
                 <input type="number" required step="0.1" className="input-field" value={distance} onChange={e => setDistance(e.target.value)} />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Photo URLs (comma-separated)</label>
-              <textarea 
-                className="input-field" 
-                placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
-                value={photosText} 
-                onChange={e => setPhotosText(e.target.value)} 
-              />
-              <p className="text-xs text-slate-500 mt-1">Paste direct links to images from Unsplash or image hosting sites.</p>
+            
+            <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+              <label className="block text-sm font-bold mb-3 text-slate-900 dark:text-white">Photos</label>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Upload Files (Max 5MB per image recommended)</label>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/30 dark:file:text-brand-400 dark:hover:file:bg-brand-900/50"
+                />
+              </div>
+
+              {base64Photos.length > 0 && (
+                <div className="flex flex-wrap gap-3 mb-4">
+                  {base64Photos.map((b64, idx) => (
+                    <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                      <img src={b64} alt="Upload preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button"
+                        onClick={() => removeBase64Photo(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Or add Photo URLs (comma-separated)</label>
+                <textarea 
+                  className="input-field min-h-[60px]" 
+                  placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
+                  value={photosText} 
+                  onChange={e => setPhotosText(e.target.value)} 
+                />
+              </div>
             </div>
+
             <div className="pt-2">
               <button type="submit" className="btn-primary w-full">
                 {editingId ? 'Update Listing' : 'Save Listing'}
