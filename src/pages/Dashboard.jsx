@@ -9,6 +9,7 @@ export default function Dashboard() {
 
   // Listing Form State
   const [showForm, setShowForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -144,6 +145,7 @@ export default function Dashboard() {
     };
 
     try {
+      setIsSaving(true);
       if (editingId) {
         // Edit existing listing
         const res = await fetch('/api/accommodations', {
@@ -169,6 +171,8 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -283,8 +287,14 @@ export default function Dashboard() {
             </div>
 
             <div className="pt-2">
-              <button type="submit" className="btn-primary w-full">
-                {editingId ? 'Update Listing' : 'Save Listing'}
+              <button type="submit" disabled={isSaving} className="btn-primary w-full flex items-center justify-center gap-2">
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  editingId ? 'Update Listing' : 'Save Listing'
+                )}
               </button>
             </div>
           </div>
