@@ -53,15 +53,19 @@ export default function Navbar() {
                   
                   <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
-                  <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <UserCircle2 className="h-6 w-6 text-slate-400" />
+                  <Link 
+                    to={user.role === 'admin' ? '/admin' : user.role === 'landlord' ? '/dashboard' : '/search'}
+                    className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors cursor-pointer group"
+                    title="Go to your dashboard"
+                  >
+                    <UserCircle2 className="h-6 w-6 text-slate-400 group-hover:text-brand-500 transition-colors" />
                     <span className="hidden sm:block font-medium">
                       {user.name}
                     </span>
                     <span className="hidden sm:inline-block ml-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 border border-brand-200 dark:border-brand-800/50">
                       {user.role}
                     </span>
-                  </div>
+                  </Link>
                   
                   <button 
                     onClick={handleLogout}
