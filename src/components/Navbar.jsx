@@ -83,7 +83,7 @@ export default function Navbar() {
                   <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                     Browse Ads
                   </Link>
-                  <Link to="/login" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                  <Link to="/login" className="btn-secondary text-sm">
                     Log in
                   </Link>
                   <Link to="/register" className="btn-primary text-sm">
