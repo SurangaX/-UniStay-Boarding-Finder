@@ -263,11 +263,11 @@ export default function Home() {
                     value={maxDistance}
                     onChange={(e) => setMaxDistance(e.target.value)}
                   >
-                    <option value="" className="text-slate-900 dark:bg-slate-800">Any Distance</option>
-                    <option value="1" className="text-slate-900 dark:bg-slate-800">Within 1 km</option>
-                    <option value="2" className="text-slate-900 dark:bg-slate-800">Within 2 km</option>
-                    <option value="5" className="text-slate-900 dark:bg-slate-800">Within 5 km</option>
-                    <option value="10" className="text-slate-900 dark:bg-slate-800">Within 10 km</option>
+                    <option value="" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Any Distance</option>
+                    <option value="1" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Within 1 km</option>
+                    <option value="2" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Within 2 km</option>
+                    <option value="5" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Within 5 km</option>
+                    <option value="10" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Within 10 km</option>
                   </select>
                 </div>
               </div>
@@ -280,12 +280,12 @@ export default function Home() {
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
                   >
-                    <option value="" className="text-slate-900 dark:bg-slate-800">Any Budget</option>
-                    <option value="10000" className="text-slate-900 dark:bg-slate-800">Under 10,000 /mo</option>
-                    <option value="20000" className="text-slate-900 dark:bg-slate-800">10,000 - 20,000 /mo</option>
-                    <option value="30000" className="text-slate-900 dark:bg-slate-800">20,000 - 30,000 /mo</option>
-                    <option value="40000" className="text-slate-900 dark:bg-slate-800">30,000 - 40,000 /mo</option>
-                    <option value="50000" className="text-slate-900 dark:bg-slate-800">40,000+ /mo</option>
+                    <option value="" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Any Budget</option>
+                    <option value="10000" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Under 10,000 /mo</option>
+                    <option value="20000" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">10,000 - 20,000 /mo</option>
+                    <option value="30000" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">20,000 - 30,000 /mo</option>
+                    <option value="40000" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">30,000 - 40,000 /mo</option>
+                    <option value="50000" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">40,000+ /mo</option>
                   </select>
                 </div>
               </div>
