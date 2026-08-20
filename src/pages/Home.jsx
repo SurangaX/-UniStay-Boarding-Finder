@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2 } from 'lucide-react';
 import AccommodationCard from '../components/AccommodationCard';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -45,6 +45,19 @@ function HomeMapPicker({ position, setPosition, setLocation, setGettingLocation 
   );
 }
 
+function MapUpdater({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 13, {
+        animate: true,
+        duration: 1
+      });
+    }
+  }, [position, map]);
+  return null;
+}
+
 export default function Home() {
   const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
@@ -52,7 +65,53 @@ export default function Home() {
   const [mapPosition, setMapPosition] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const wrapperRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchLocations = async (query) => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/places?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setSuggestions(data);
+    } catch (err) {
+      console.error('Error fetching locations:', err);
+    }
+  };
+
+  const handleLocationChange = (e) => {
+    const val = e.target.value;
+    setLocation(val);
+    setShowSuggestions(true);
+    
+    const timer = setTimeout(() => fetchLocations(val), 300);
+    return () => clearTimeout(timer);
+  };
+
+  const selectLocation = (place) => {
+    setLocation(place.display_name);
+    setShowSuggestions(false);
+    
+    // Move map pin
+    if (place.lat && place.lon) {
+      setMapPosition([parseFloat(place.lat), parseFloat(place.lon)]);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -144,6 +203,7 @@ export default function Home() {
                   attribution='&copy; OpenStreetMap'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <MapUpdater position={mapPosition} />
                 <HomeMapPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} setGettingLocation={setGettingLocation} />
               </MapContainer>
               <div className="absolute top-2 right-2 z-[1000]">
@@ -161,18 +221,37 @@ export default function Home() {
 
             {/* Filter Forms */}
             <div className="w-full md:w-[50%] flex flex-col justify-center space-y-4 px-2 py-4">
-              <div>
+              <div ref={wrapperRef}>
                 <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1.5">Search Location</label>
                 <div className="text-xs text-slate-500 mb-2">Click on the map or type to set your location.</div>
-                <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700">
-                  <MapPin className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0" />
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Colombo 07..."
-                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 outline-none"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                  />
+                <div className="relative">
+                  <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700 z-[60]">
+                    <MapPin className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0" />
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Colombo 07..."
+                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 outline-none"
+                      value={location}
+                      onChange={handleLocationChange}
+                      onFocus={() => setShowSuggestions(true)}
+                    />
+                  </div>
+                  
+                  {/* Custom Autocomplete Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-50 left-0 right-0 top-full mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
+                      {suggestions.map((place) => (
+                        <li 
+                          key={place.place_id}
+                          onClick={() => selectLocation(place)}
+                          className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-left text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                        >
+                          <div className="font-medium text-slate-900 dark:text-white truncate">{place.name}</div>
+                          <div className="text-xs text-slate-500 truncate">{place.display_name}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
 

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PlusCircle, Loader2, MapPin } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -43,6 +43,19 @@ function MapLocationPicker({ position, setPosition, setLocation }) {
   );
 }
 
+function MapUpdater({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 13, {
+        animate: true,
+        duration: 1
+      });
+    }
+  }, [position, map]);
+  return null;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [accommodations, setAccommodations] = useState([]);
@@ -62,6 +75,52 @@ export default function Dashboard() {
   const [photosText, setPhotosText] = useState('');
   const [base64Photos, setBase64Photos] = useState([]);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchLocations = async (query) => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/places?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setSuggestions(data);
+    } catch (err) {
+      console.error('Error fetching locations:', err);
+    }
+  };
+
+  const handleLocationChange = (e) => {
+    const val = e.target.value;
+    setLocation(val);
+    setShowSuggestions(true);
+    
+    const timer = setTimeout(() => fetchLocations(val), 300);
+    return () => clearTimeout(timer);
+  };
+
+  const selectLocation = (place) => {
+    setLocation(place.display_name);
+    setShowSuggestions(false);
+    
+    // Move map pin
+    if (place.lat && place.lon) {
+      setMapPosition([parseFloat(place.lat), parseFloat(place.lon)]);
+    }
+  };
 
   useEffect(() => {
     if (user?.role === 'landlord') {
@@ -331,10 +390,37 @@ export default function Dashboard() {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
+                  <MapUpdater position={mapPosition} />
                   <MapLocationPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} />
                 </MapContainer>
               </div>
-              <input type="text" placeholder="e.g. Colombo 07" required className="input-field" value={location} onChange={e => setLocation(e.target.value)} />
+              <div className="relative mt-3" ref={wrapperRef}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Colombo 07" 
+                  required 
+                  className="input-field" 
+                  value={location} 
+                  onChange={handleLocationChange}
+                  onFocus={() => setShowSuggestions(true)}
+                />
+                
+                {/* Custom Autocomplete Dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="absolute z-50 left-0 right-0 top-full mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
+                    {suggestions.map((place) => (
+                      <li 
+                        key={place.place_id}
+                        onClick={() => selectLocation(place)}
+                        className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-left text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                      >
+                        <div className="font-medium text-slate-900 dark:text-white truncate">{place.name}</div>
+                        <div className="text-xs text-slate-500 truncate">{place.display_name}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-4">
