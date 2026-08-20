@@ -1,6 +1,47 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PlusCircle, Loader2 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default Leaflet icon paths in Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function MapLocationPicker({ position, setPosition, setLocation }) {
+  useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      setPosition([lat, lng]);
+      
+      // Reverse Geocoding
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.display_name) {
+            // Simplify address to a reasonable length if needed, or use full display_name
+            const parts = [];
+            if (data.address.road) parts.push(data.address.road);
+            if (data.address.suburb) parts.push(data.address.suburb);
+            if (data.address.city || data.address.town) parts.push(data.address.city || data.address.town);
+            
+            const finalLocation = parts.length > 0 ? parts.join(', ') : data.display_name;
+            setLocation(finalLocation);
+          }
+        })
+        .catch(err => console.error("Geocoding error: ", err));
+    },
+  });
+
+  return position === null ? null : (
+    <Marker position={position}></Marker>
+  );
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -14,6 +55,7 @@ export default function Dashboard() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [mapPosition, setMapPosition] = useState(null); // Initialize with null until clicked
   const [rentAmount, setRentAmount] = useState('');
   const [distance, setDistance] = useState('');
   const [photoInputType, setPhotoInputType] = useState('upload'); // 'upload' or 'url'
@@ -36,6 +78,7 @@ export default function Dashboard() {
     setTitle('');
     setDescription('');
     setLocation('');
+    setMapPosition(null);
     setRentAmount('');
     setDistance('');
     setPhotosText('');
@@ -49,6 +92,7 @@ export default function Dashboard() {
     setTitle(acc.title);
     setDescription(acc.description || '');
     setLocation(acc.location || '');
+    setMapPosition(null); // Reset map pin on edit unless we saved coordinates (which we don't yet)
     setRentAmount(acc.rent_amount);
     setDistance(acc.distance_to_uni);
     
@@ -222,10 +266,28 @@ export default function Dashboard() {
               <label className="block text-sm font-medium mb-1">Description</label>
               <textarea required className="input-field min-h-[100px]" value={description} onChange={e => setDescription(e.target.value)} />
             </div>
+            
             <div>
               <label className="block text-sm font-medium mb-1">Location</label>
+              <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                Click on the map to automatically get the address, or type it manually.
+              </div>
+              <div className="h-[250px] mb-3 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 z-10 relative">
+                <MapContainer 
+                  center={[6.9271, 79.8612]} // Default to Colombo
+                  zoom={12} 
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapLocationPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} />
+                </MapContainer>
+              </div>
               <input type="text" placeholder="e.g. Colombo 07" required className="input-field" value={location} onChange={e => setLocation(e.target.value)} />
             </div>
+
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-1">Rent Amount (LKR)</label>
