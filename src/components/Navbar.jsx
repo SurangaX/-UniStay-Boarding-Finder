@@ -39,17 +39,17 @@ export default function Navbar() {
                   <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                     Home
                   </Link>
-                  {user.role === 'admin' ? (
+                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                    Browse Ads
+                  </Link>
+                  {user.role === 'admin' && (
                     <Link to="/admin" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                       Admin Panel
                     </Link>
-                  ) : user.role === 'landlord' ? (
+                  )}
+                  {user.role === 'landlord' && (
                     <Link to="/dashboard" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                       Dashboard
-                    </Link>
-                  ) : (
-                    <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
-                      Browse
                     </Link>
                   )}
                   {user.role !== 'admin' && (
@@ -82,6 +82,9 @@ export default function Navbar() {
                 <div className="flex items-center gap-4">
                   <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                     Home
+                  </Link>
+                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                    Browse Ads
                   </Link>
                   <Link to="/login" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
                     Log in

@@ -1,15 +1,57 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShieldCheck, MapPin, Home as HomeIcon } from 'lucide-react';
+import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2 } from 'lucide-react';
 import AccommodationCard from '../components/AccommodationCard';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default Leaflet icon paths in Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function HomeMapPicker({ position, setPosition, setLocation, setGettingLocation }) {
+  useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      setPosition([lat, lng]);
+      setGettingLocation(true);
+      
+      // Reverse Geocoding
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.display_name) {
+            const parts = [];
+            if (data.address.road) parts.push(data.address.road);
+            if (data.address.suburb) parts.push(data.address.suburb);
+            if (data.address.city || data.address.town) parts.push(data.address.city || data.address.town);
+            
+            const finalLocation = parts.length > 0 ? parts.join(', ') : data.display_name;
+            setLocation(finalLocation);
+          }
+        })
+        .catch(err => console.error("Geocoding error: ", err))
+        .finally(() => setGettingLocation(false));
+    },
+  });
+
+  return position === null ? null : (
+    <Marker position={position}></Marker>
+  );
+}
 
 export default function Home() {
-  const [distance, setDistance] = useState('');
+  const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [maxDistance, setMaxDistance] = useState('');
+  const [mapPosition, setMapPosition] = useState(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
-  const wrapperRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,50 +65,48 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const fetchLocations = async (query) => {
-    if (query.length < 3) {
-      setSuggestions([]);
+  const getLocationFromDevice = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
       return;
     }
-    try {
-      const res = await fetch(`/api/places?query=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setSuggestions(data);
-    } catch (err) {
-      console.error('Error fetching locations:', err);
-    }
-  };
-
-  const handleLocationChange = (e) => {
-    const val = e.target.value;
-    setDistance(val);
-    setShowSuggestions(true);
     
-    // Debounce basic implementation
-    const timer = setTimeout(() => fetchLocations(val), 300);
-    return () => clearTimeout(timer);
-  };
-
-  const selectLocation = (place) => {
-    setDistance(place.display_name);
-    setShowSuggestions(false);
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapPosition([latitude, longitude]);
+        
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.display_name) {
+              const parts = [];
+              if (data.address.road) parts.push(data.address.road);
+              if (data.address.suburb) parts.push(data.address.suburb);
+              if (data.address.city || data.address.town) parts.push(data.address.city || data.address.town);
+              
+              const finalLocation = parts.length > 0 ? parts.join(', ') : data.display_name;
+              setLocation(finalLocation);
+            }
+          })
+          .catch(err => console.error("Geocoding error: ", err))
+          .finally(() => setGettingLocation(false));
+      },
+      (error) => {
+        console.error(error);
+        alert("Unable to retrieve your location. Please check your permissions.");
+        setGettingLocation(false);
+      }
+    );
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (distance) params.append('location', distance);
+    if (location) params.append('location', location);
     if (budget) params.append('budget', budget);
+    if (maxDistance) params.append('max_distance', maxDistance);
     navigate(`/search?${params.toString()}`);
   };
 
@@ -81,77 +121,105 @@ export default function Home() {
             className="w-full h-full object-cover opacity-20 dark:opacity-10"
           />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 flex flex-col items-center text-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 flex flex-col items-center text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6">
             Find Your Perfect <br className="hidden sm:block" />
             <span className="text-brand-200 dark:text-brand-400">Student Home</span>
           </h1>
-          <p className="text-lg sm:text-xl max-w-2xl text-brand-50 dark:text-slate-300 mb-12">
+          <p className="text-lg sm:text-xl max-w-2xl text-brand-50 dark:text-slate-300 mb-10">
             Ditch the hassle of finding boarding. Browse verified accommodations, read reviews from peers, and connect directly with trusted landlords near your campus.
           </p>
           
-          {/* Quick Search - Premium Pill Design */}
-          <div className="bg-white dark:bg-slate-900 rounded-full shadow-2xl p-2 w-full max-w-3xl flex flex-col md:flex-row items-center border border-slate-100 dark:border-slate-800 transition-colors">
-            <div className="flex-1 w-full px-6 py-2 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-t-3xl md:rounded-l-full md:rounded-tr-none transition-colors cursor-text" ref={wrapperRef}>
-              <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Location</label>
-              <div className="relative flex items-center">
-                <MapPin className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" />
-                <div className="relative w-full">
+          {/* Map & Search Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-4 w-full max-w-5xl border border-slate-100 dark:border-slate-800 transition-colors text-left flex flex-col md:flex-row gap-6">
+            
+            {/* Map Container */}
+            <div className="w-full md:w-[50%] h-[300px] md:h-auto rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700 z-10">
+              <MapContainer 
+                center={[6.9271, 79.8612]} // Default to Colombo
+                zoom={11} 
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  attribution='&copy; OpenStreetMap'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <HomeMapPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} setGettingLocation={setGettingLocation} />
+              </MapContainer>
+              <div className="absolute top-2 right-2 z-[1000]">
+                <button 
+                  type="button" 
+                  onClick={getLocationFromDevice}
+                  disabled={gettingLocation}
+                  className="bg-white dark:bg-slate-800 text-brand-600 hover:text-brand-700 p-2 rounded-lg shadow-md font-medium disabled:opacity-50 flex items-center justify-center border border-slate-200 dark:border-slate-700"
+                  title="Use My Location"
+                >
+                  {gettingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Forms */}
+            <div className="w-full md:w-[50%] flex flex-col justify-center space-y-4 px-2 py-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1.5">Search Location</label>
+                <div className="text-xs text-slate-500 mb-2">Click on the map or type to set your location.</div>
+                <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700">
+                  <MapPin className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0" />
                   <input 
                     type="text" 
-                    placeholder="University, city, or address..."
-                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 text-sm md:text-base outline-none"
-                    value={distance}
-                    onChange={handleLocationChange}
-                    onFocus={() => setShowSuggestions(true)}
+                    placeholder="e.g. Colombo 07..."
+                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 outline-none"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
                   />
-                  
-                  {/* Custom Autocomplete Dropdown */}
-                  {showSuggestions && suggestions.length > 0 && (
-                    <ul className="absolute z-50 left-0 right-0 mt-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
-                      {suggestions.map((place) => (
-                        <li 
-                          key={place.place_id}
-                          onClick={() => selectLocation(place)}
-                          className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-left text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 last:border-0"
-                        >
-                          <div className="font-medium text-slate-900 dark:text-white truncate">{place.name}</div>
-                          <div className="text-xs text-slate-500 truncate">{place.display_name}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
               </div>
-            </div>
-            
-            <div className="flex-1 w-full px-6 py-2 group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-text">
-              <label className="block text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Max Budget (LKR)</label>
-              <div className="relative flex items-center">
-                <span className="font-medium text-slate-400 mr-2 flex-shrink-0">Rs.</span>
-                <select 
-                  className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white text-sm md:text-base outline-none appearance-none cursor-pointer"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                >
-                  <option value="" className="text-slate-900 dark:bg-slate-800 dark:text-white">Any Budget</option>
-                  <option value="10000" className="text-slate-900 dark:bg-slate-800 dark:text-white">Under 10,000 /mo</option>
-                  <option value="20000" className="text-slate-900 dark:bg-slate-800 dark:text-white">10,000 - 20,000 /mo</option>
-                  <option value="30000" className="text-slate-900 dark:bg-slate-800 dark:text-white">20,000 - 30,000 /mo</option>
-                  <option value="40000" className="text-slate-900 dark:bg-slate-800 dark:text-white">30,000 - 40,000 /mo</option>
-                  <option value="50000" className="text-slate-900 dark:bg-slate-800 dark:text-white">40,000+ /mo</option>
-                </select>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1.5">Max Distance to Uni (Range)</label>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700">
+                  <select 
+                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white outline-none cursor-pointer"
+                    value={maxDistance}
+                    onChange={(e) => setMaxDistance(e.target.value)}
+                  >
+                    <option value="" className="text-slate-900 dark:bg-slate-800">Any Distance</option>
+                    <option value="1" className="text-slate-900 dark:bg-slate-800">Within 1 km</option>
+                    <option value="2" className="text-slate-900 dark:bg-slate-800">Within 2 km</option>
+                    <option value="5" className="text-slate-900 dark:bg-slate-800">Within 5 km</option>
+                    <option value="10" className="text-slate-900 dark:bg-slate-800">Within 10 km</option>
+                  </select>
+                </div>
               </div>
-            </div>
-            
-            <div className="w-full md:w-auto p-1 mt-2 md:mt-0">
-              <button 
-                onClick={handleSearch} 
-                className="w-full md:w-auto bg-brand-600 hover:bg-brand-500 text-white rounded-full h-12 px-8 flex items-center justify-center gap-2 font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-              >
-                <Search className="w-5 h-5" />
-                <span>Search</span>
-              </button>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1.5">Max Budget (LKR)</label>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700">
+                  <select 
+                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white outline-none cursor-pointer"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                  >
+                    <option value="" className="text-slate-900 dark:bg-slate-800">Any Budget</option>
+                    <option value="10000" className="text-slate-900 dark:bg-slate-800">Under 10,000 /mo</option>
+                    <option value="20000" className="text-slate-900 dark:bg-slate-800">10,000 - 20,000 /mo</option>
+                    <option value="30000" className="text-slate-900 dark:bg-slate-800">20,000 - 30,000 /mo</option>
+                    <option value="40000" className="text-slate-900 dark:bg-slate-800">30,000 - 40,000 /mo</option>
+                    <option value="50000" className="text-slate-900 dark:bg-slate-800">40,000+ /mo</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="pt-2">
+                <button 
+                  onClick={handleSearch} 
+                  className="w-full bg-brand-600 hover:bg-brand-500 text-white rounded-xl h-14 flex items-center justify-center gap-2 font-bold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                >
+                  <Search className="w-5 h-5" />
+                  <span>Search Properties</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

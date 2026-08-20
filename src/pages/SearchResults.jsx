@@ -10,9 +10,11 @@ export default function SearchResults() {
 
   const initialLocation = searchParams.get('location') || '';
   const initialBudget = searchParams.get('budget') || '';
+  const initialDistance = searchParams.get('max_distance') || '';
 
   const [location, setLocation] = useState(initialLocation);
   const [budget, setBudget] = useState(initialBudget);
+  const [maxDistance, setMaxDistance] = useState(initialDistance);
 
   useEffect(() => {
     fetch('/api/accommodations')
@@ -31,6 +33,9 @@ export default function SearchResults() {
         if (initialBudget) {
           filtered = filtered.filter(a => parseFloat(a.rent_amount) <= parseFloat(initialBudget));
         }
+        if (initialDistance) {
+          filtered = filtered.filter(a => parseFloat(a.distance_to_uni) <= parseFloat(initialDistance));
+        }
         setAccommodations(filtered);
         setLoading(false);
       })
@@ -45,6 +50,7 @@ export default function SearchResults() {
     const params = new URLSearchParams();
     if (location) params.append('location', location);
     if (budget) params.append('budget', budget);
+    if (maxDistance) params.append('max_distance', maxDistance);
     setSearchParams(params);
   };
 
@@ -67,7 +73,7 @@ export default function SearchResults() {
                   onChange={(e) => setLocation(e.target.value)}
                 />
               </div>
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Rent (LKR)</label>
                 <select 
                   className="input-field"
@@ -80,6 +86,20 @@ export default function SearchResults() {
                   <option value="30000">20,000 - 30,000</option>
                   <option value="40000">30,000 - 40,000</option>
                   <option value="50000">40,000+</option>
+                </select>
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Distance to Uni (km)</label>
+                <select 
+                  className="input-field"
+                  value={maxDistance}
+                  onChange={(e) => setMaxDistance(e.target.value)}
+                >
+                  <option value="">Any Distance</option>
+                  <option value="1">Within 1 km</option>
+                  <option value="2">Within 2 km</option>
+                  <option value="5">Within 5 km</option>
+                  <option value="10">Within 10 km</option>
                 </select>
               </div>
               <button type="submit" className="w-full bg-brand-600 text-white rounded-md py-2 hover:bg-brand-700 transition">Apply Filters</button>
