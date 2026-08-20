@@ -5,23 +5,25 @@ import { Navigate, Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [pendingAds, setPendingAds] = useState([]);
+  const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'active'
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      fetchPendingAds();
+      fetchAds();
     }
-  }, [user]);
+  }, [user, activeTab]);
 
-  const fetchPendingAds = async () => {
+  const fetchAds = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/accommodations?admin=true');
+      const res = await fetch(`/api/accommodations?admin=true&status=${activeTab}`);
       const data = await res.json();
-      setPendingAds(data);
+      setAds(data);
     } catch (err) {
-      console.error('Failed to fetch pending ads', err);
+      console.error('Failed to fetch ads', err);
     } finally {
       setLoading(false);
     }
@@ -35,13 +37,34 @@ export default function AdminDashboard() {
         body: JSON.stringify({ id, is_verified: true })
       });
       if (res.ok) {
-        setPendingAds(pendingAds.filter(ad => ad.id !== id));
+        setAds(ads.filter(ad => ad.id !== id));
       } else {
         alert('Failed to approve ad');
       }
     } catch (err) {
       console.error(err);
       alert('Error occurred while approving ad');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const deleteAd = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this accommodation? This cannot be undone.')) return;
+    setProcessingId(id);
+    try {
+      const res = await fetch('/api/accommodations', {
+        method: 'DELETE',
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        setAds(ads.filter(ad => ad.id !== id));
+      } else {
+        alert('Failed to delete ad');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error occurred while deleting ad');
     } finally {
       setProcessingId(null);
     }
@@ -59,20 +82,30 @@ export default function AdminDashboard() {
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Pending Accommodations</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Review and approve new listings before they go public.</p>
+        <div className="border-b border-slate-200 dark:border-slate-700 flex">
+          <button 
+            className={`flex-1 py-4 text-center font-medium transition-colors ${activeTab === 'pending' ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            onClick={() => setActiveTab('pending')}
+          >
+            Pending Approvals
+          </button>
+          <button 
+            className={`flex-1 py-4 text-center font-medium transition-colors ${activeTab === 'active' ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Active Ads
+          </button>
         </div>
 
         {loading ? (
           <div className="flex justify-center p-12">
             <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
           </div>
-        ) : pendingAds.length === 0 ? (
+        ) : ads.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">
             <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500 opacity-50" />
             <p className="text-lg font-medium">All caught up!</p>
-            <p className="text-sm">There are no pending ads to approve right now.</p>
+            <p className="text-sm">There are no {activeTab} ads right now.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -87,7 +120,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                {pendingAds.map(ad => (
+                {ads.map(ad => (
                   <tr key={ad.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="p-4 font-medium text-slate-900 dark:text-white">{ad.title}</td>
                     <td className="p-4 text-slate-600 dark:text-slate-300">{ad.location || '-'}</td>
@@ -103,15 +136,28 @@ export default function AdminDashboard() {
                         >
                           View
                         </Link>
+                        {activeTab === 'pending' && (
+                          <button 
+                            onClick={() => approveAd(ad.id)} 
+                            disabled={processingId === ad.id}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+                          >
+                            {processingId === ad.id ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
+                            ) : (
+                              'Approve'
+                            )}
+                          </button>
+                        )}
                         <button 
-                          onClick={() => approveAd(ad.id)} 
+                          onClick={() => deleteAd(ad.id)} 
                           disabled={processingId === ad.id}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
                         >
                           {processingId === ad.id ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
                           ) : (
-                            'Approve'
+                            'Delete'
                           )}
                         </button>
                       </div>

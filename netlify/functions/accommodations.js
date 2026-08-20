@@ -5,7 +5,7 @@ export const handler = async (event) => {
     const sql = neon(process.env.DATABASE_URL);
 
     if (event.httpMethod === 'GET') {
-      const { id, landlord_id, admin } = event.queryStringParameters || {};
+      const { id, landlord_id, admin, status } = event.queryStringParameters || {};
 
       if (id) {
         // Get specific accommodation with its reviews
@@ -40,7 +40,12 @@ export const handler = async (event) => {
       }
 
       if (admin) {
-        // List unverified accommodations for admin
+        if (status === 'active') {
+          // List verified accommodations for admin
+          const accs = await sql`SELECT * FROM accommodations WHERE is_verified = TRUE ORDER BY created_at DESC`;
+          return { statusCode: 200, body: JSON.stringify(accs) };
+        }
+        // Default to unverified/pending accommodations for admin
         const accs = await sql`SELECT * FROM accommodations WHERE is_verified = FALSE ORDER BY created_at ASC`;
         return { statusCode: 200, body: JSON.stringify(accs) };
       }
@@ -111,6 +116,38 @@ export const handler = async (event) => {
       }
 
       return { statusCode: 200, body: JSON.stringify(updatedAcc[0]) };
+    }
+
+    if (event.httpMethod === 'DELETE') {
+      const data = event.body ? JSON.parse(event.body) : {};
+      const { id, landlord_id } = data;
+
+      if (!id) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Missing accommodation id' }) };
+      }
+
+      let deletedAcc;
+      if (landlord_id) {
+        // Landlord deleting their own ad
+        deletedAcc = await sql`
+          DELETE FROM accommodations
+          WHERE id = ${id} AND landlord_id = ${landlord_id}
+          RETURNING *;
+        `;
+      } else {
+        // Admin deleting any ad
+        deletedAcc = await sql`
+          DELETE FROM accommodations
+          WHERE id = ${id}
+          RETURNING *;
+        `;
+      }
+
+      if (deletedAcc.length === 0) {
+        return { statusCode: 404, body: JSON.stringify({ error: 'Accommodation not found or unauthorized' }) };
+      }
+
+      return { statusCode: 200, body: JSON.stringify({ message: 'Deleted successfully' }) };
     }
 
     return { statusCode: 405, body: 'Method Not Allowed' };

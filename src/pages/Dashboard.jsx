@@ -176,6 +176,25 @@ export default function Dashboard() {
     }
   };
 
+  const deleteListing = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
+    
+    try {
+      const res = await fetch('/api/accommodations', {
+        method: 'DELETE',
+        body: JSON.stringify({ id, landlord_id: user.id })
+      });
+      if (res.ok) {
+        setAccommodations(accommodations.filter(a => a.id !== id));
+      } else {
+        alert('Failed to delete listing');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Error occurred while deleting listing');
+    }
+  };
+
   if (user?.role !== 'landlord') {
     return <div className="p-8 text-center text-slate-800 dark:text-slate-200">Please switch to Landlord mode to view the dashboard.</div>;
   }
@@ -329,8 +348,11 @@ export default function Dashboard() {
                       <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-medium border border-transparent dark:border-yellow-800/50">Pending</span>
                     )}
                   </td>
-                  <td className="p-4 text-brand-600 dark:text-brand-400 font-medium text-sm">
-                    <button onClick={() => openEditForm(acc)} className="hover:underline cursor-pointer">Edit</button>
+                  <td className="p-4 text-sm">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => openEditForm(acc)} className="text-brand-600 dark:text-brand-400 font-medium hover:underline cursor-pointer">Edit</button>
+                      <button onClick={() => deleteListing(acc.id)} className="text-red-600 dark:text-red-400 font-medium hover:underline cursor-pointer">Delete</button>
+                    </div>
                   </td>
                 </tr>
               ))}
