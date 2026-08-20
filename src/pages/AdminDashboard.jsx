@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, Loader2, CheckCircle } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -96,17 +96,25 @@ export default function AdminDashboard() {
                       {new Date(ad.created_at).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-right">
-                      <button 
-                        onClick={() => approveAd(ad.id)} 
-                        disabled={processingId === ad.id}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2 ml-auto"
-                      >
-                        {processingId === ad.id ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
-                        ) : (
-                          'Approve'
-                        )}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <Link 
+                          to={`/accommodation/${ad.id}`}
+                          className="bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 text-brand-700 dark:text-brand-400 px-4 py-2 rounded-md text-sm font-medium transition-colors border border-brand-200 dark:border-brand-800"
+                        >
+                          View
+                        </Link>
+                        <button 
+                          onClick={() => approveAd(ad.id)} 
+                          disabled={processingId === ad.id}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+                        >
+                          {processingId === ad.id ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
+                          ) : (
+                            'Approve'
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
