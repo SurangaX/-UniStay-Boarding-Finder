@@ -7,12 +7,14 @@ export default function Dashboard() {
   const [accommodations, setAccommodations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // New Listing Form State
+  // Listing Form State
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [rentAmount, setRentAmount] = useState('');
   const [distance, setDistance] = useState('');
+  const [photosText, setPhotosText] = useState('');
 
   useEffect(() => {
     if (user?.role === 'landlord') {
@@ -25,25 +27,69 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  const addListing = async (e) => {
+  const openAddForm = () => {
+    setEditingId(null);
+    setTitle('');
+    setDescription('');
+    setRentAmount('');
+    setDistance('');
+    setPhotosText('');
+    setShowForm(true);
+  };
+
+  const openEditForm = (acc) => {
+    setEditingId(acc.id);
+    setTitle(acc.title);
+    setDescription(acc.description || '');
+    setRentAmount(acc.rent_amount);
+    setDistance(acc.distance_to_uni);
+    setPhotosText(acc.photos ? acc.photos.join(', ') : '');
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const saveListing = async (e) => {
     e.preventDefault();
+    
+    // Parse photos from comma separated text
+    const photos = photosText
+      .split(',')
+      .map(url => url.trim())
+      .filter(url => url.length > 0);
+
+    const payload = {
+      landlord_id: user.id,
+      title,
+      description,
+      rent_amount: rentAmount,
+      distance_to_uni: distance,
+      photos,
+      facilities: { internet: true, water: true }
+    };
+
     try {
-      const res = await fetch('/api/accommodations', {
-        method: 'POST',
-        body: JSON.stringify({
-          landlord_id: user.id,
-          title,
-          description,
-          rent_amount: rentAmount,
-          distance_to_uni: distance,
-          photos: [], // Simplify for now
-          facilities: { internet: true, water: true }
-        })
-      });
-      if (res.ok) {
-        const newAcc = await res.json();
-        setAccommodations([newAcc, ...accommodations]);
-        setShowForm(false);
+      if (editingId) {
+        // Edit existing listing
+        const res = await fetch('/api/accommodations', {
+          method: 'PUT',
+          body: JSON.stringify({ ...payload, id: editingId })
+        });
+        if (res.ok) {
+          const updatedAcc = await res.json();
+          setAccommodations(accommodations.map(a => a.id === editingId ? updatedAcc : a));
+          setShowForm(false);
+        }
+      } else {
+        // Add new listing
+        const res = await fetch('/api/accommodations', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const newAcc = await res.json();
+          setAccommodations([newAcc, ...accommodations]);
+          setShowForm(false);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -58,14 +104,16 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Landlord Dashboard</h1>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
-          <PlusCircle className="w-5 h-5" /> Add Listing
+        <button onClick={showForm ? () => setShowForm(false) : openAddForm} className="btn-primary flex items-center gap-2">
+          <PlusCircle className="w-5 h-5" /> {showForm ? 'Cancel' : 'Add Listing'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={addListing} className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-8 max-w-2xl">
-          <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Add New Accommodation</h2>
+        <form onSubmit={saveListing} className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-8 max-w-2xl">
+          <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
+            {editingId ? 'Edit Accommodation' : 'Add New Accommodation'}
+          </h2>
           <div className="space-y-4 text-slate-800 dark:text-slate-200">
             <div>
               <label className="block text-sm font-medium mb-1">Title</label>
@@ -73,11 +121,11 @@ export default function Dashboard() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea required className="input-field" value={description} onChange={e => setDescription(e.target.value)} />
+              <textarea required className="input-field min-h-[100px]" value={description} onChange={e => setDescription(e.target.value)} />
             </div>
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">Rent Amount ($)</label>
+                <label className="block text-sm font-medium mb-1">Rent Amount (LKR)</label>
                 <input type="number" required className="input-field" value={rentAmount} onChange={e => setRentAmount(e.target.value)} />
               </div>
               <div className="flex-1">
@@ -85,8 +133,20 @@ export default function Dashboard() {
                 <input type="number" required step="0.1" className="input-field" value={distance} onChange={e => setDistance(e.target.value)} />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Photo URLs (comma-separated)</label>
+              <textarea 
+                className="input-field" 
+                placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
+                value={photosText} 
+                onChange={e => setPhotosText(e.target.value)} 
+              />
+              <p className="text-xs text-slate-500 mt-1">Paste direct links to images from Unsplash or image hosting sites.</p>
+            </div>
             <div className="pt-2">
-              <button type="submit" className="btn-primary w-full">Save Listing</button>
+              <button type="submit" className="btn-primary w-full">
+                {editingId ? 'Update Listing' : 'Save Listing'}
+              </button>
             </div>
           </div>
         </form>
@@ -120,7 +180,9 @@ export default function Dashboard() {
                       <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-medium border border-transparent dark:border-yellow-800/50">Pending</span>
                     )}
                   </td>
-                  <td className="p-4 text-brand-600 dark:text-brand-400 font-medium text-sm hover:underline cursor-pointer">Edit</td>
+                  <td className="p-4 text-brand-600 dark:text-brand-400 font-medium text-sm">
+                    <button onClick={() => openEditForm(acc)} className="hover:underline cursor-pointer">Edit</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

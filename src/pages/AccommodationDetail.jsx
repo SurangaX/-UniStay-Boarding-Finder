@@ -122,6 +122,14 @@ export default function AccommodationDetail() {
   }
 
   const photos = acc.photos && acc.photos.length > 0 ? acc.photos : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000'];
+  const [selectedPhoto, setSelectedPhoto] = useState(photos[0]);
+
+  // If photos array changes or component re-renders with new acc, ensure selectedPhoto is valid
+  useEffect(() => {
+    if (photos.length > 0 && !photos.includes(selectedPhoto)) {
+      setSelectedPhoto(photos[0]);
+    }
+  }, [photos]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -140,9 +148,24 @@ export default function AccommodationDetail() {
         </div>
       </div>
 
-      {/* Main Image */}
-      <div className="rounded-2xl overflow-hidden h-[400px] mb-8 shadow-sm">
-        <img src={photos[0]} alt={acc.title} className="w-full h-full object-cover" />
+      {/* Main Image Gallery */}
+      <div className="mb-8">
+        <div className="rounded-2xl overflow-hidden h-[400px] shadow-sm mb-3">
+          <img src={selectedPhoto} alt={acc.title} className="w-full h-full object-cover transition-opacity duration-300" />
+        </div>
+        {photos.length > 1 && (
+          <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+            {photos.map((photo, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => setSelectedPhoto(photo)}
+                className={`relative w-24 h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${selectedPhoto === photo ? 'border-brand-500 opacity-100' : 'border-transparent opacity-70 hover:opacity-100'}`}
+              >
+                <img src={photo} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">

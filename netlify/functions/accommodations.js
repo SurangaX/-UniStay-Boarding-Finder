@@ -56,6 +56,34 @@ export const handler = async (event) => {
       return { statusCode: 201, body: JSON.stringify(newAcc[0]) };
     }
 
+    if (event.httpMethod === 'PUT') {
+      const data = JSON.parse(event.body);
+      const { id, landlord_id, title, description, rent_amount, distance_to_uni, photos, facilities } = data;
+
+      if (!id || !landlord_id) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+      }
+
+      const updatedAcc = await sql`
+        UPDATE accommodations
+        SET 
+          title = ${title},
+          description = ${description},
+          rent_amount = ${rent_amount},
+          distance_to_uni = ${distance_to_uni},
+          photos = ${photos},
+          facilities = ${JSON.stringify(facilities)}::jsonb
+        WHERE id = ${id} AND landlord_id = ${landlord_id}
+        RETURNING *;
+      `;
+
+      if (updatedAcc.length === 0) {
+        return { statusCode: 404, body: JSON.stringify({ error: 'Accommodation not found or unauthorized' }) };
+      }
+
+      return { statusCode: 200, body: JSON.stringify(updatedAcc[0]) };
+    }
+
     return { statusCode: 405, body: 'Method Not Allowed' };
   } catch (error) {
     console.error(error);
