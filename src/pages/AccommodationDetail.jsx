@@ -255,6 +255,11 @@ export default function AccommodationDetail() {
             <p className="text-slate-600 dark:text-slate-300 text-sm mb-6">Contact the landlord to ask questions or arrange a viewing.</p>
             {user?.role === 'student' ? (
               <button onClick={() => setShowModal(true)} className="w-full btn-primary py-3">Message Landlord</button>
+            ) : user?.role === 'landlord' || user?.role === 'admin' ? (
+              <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
+                <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Logged in as {user.role === 'admin' ? 'Admin' : 'Landlord'}</p>
+                <p className="text-slate-500 dark:text-slate-500 text-xs mt-1">Switch to a student account to send inquiries.</p>
+              </div>
             ) : (
               <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
                 <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">Log in as a student to send inquiries.</p>
