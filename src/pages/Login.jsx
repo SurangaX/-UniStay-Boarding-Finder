@@ -18,8 +18,15 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/');
+      const loggedInUser = await login(email, password);
+      
+      if (loggedInUser.role === 'admin') {
+        navigate('/admin');
+      } else if (loggedInUser.role === 'landlord') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.message || 'Failed to login. Please check your credentials.');
     } finally {
