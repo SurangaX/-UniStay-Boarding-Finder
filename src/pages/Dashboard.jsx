@@ -341,6 +341,27 @@ export default function Dashboard() {
     }
   };
 
+  const boostListing = async (id) => {
+    if (!window.confirm('Simulate payment of LKR 299 to boost this ad for 7 days?')) return;
+    
+    try {
+      const res = await fetch('/api/accommodations', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, action: 'boost' })
+      });
+      if (res.ok) {
+        const updatedAcc = await res.json();
+        setAccommodations(accommodations.map(a => a.id === id ? updatedAcc : a));
+        alert('Boost successful! Your ad is now prioritized for 7 days.');
+      } else {
+        alert('Failed to boost listing');
+      }
+    } catch (err) {
+      console.error('Boost error:', err);
+      alert('Error occurred while boosting listing');
+    }
+  };
+
   if (user?.role !== 'landlord') {
     return <div className="p-8 text-center text-slate-800 dark:text-slate-200">Please switch to Landlord mode to view the dashboard.</div>;
   }
@@ -567,7 +588,7 @@ export default function Dashboard() {
                   <td className="p-4 text-sm">
                     <div className="flex items-center gap-3">
                       {!acc.is_boosted && (
-                        <button onClick={() => alert('Payment Gateway Integration Coming Soon! This will cost LKR 299.')} className="text-amber-500 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                        <button onClick={() => boostListing(acc.id)} className="text-amber-500 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1">
                           Boost
                         </button>
                       )}

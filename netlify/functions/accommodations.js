@@ -5,6 +5,9 @@ export const handler = async (event) => {
     const sql = neon(process.env.DATABASE_URL);
 
     if (event.httpMethod === 'GET') {
+      // Auto-expire boosts
+      await sql`UPDATE accommodations SET is_boosted = FALSE, boost_expires_at = NULL WHERE is_boosted = TRUE AND boost_expires_at < NOW()`;
+
       const { id, landlord_id, admin, status } = event.queryStringParameters || {};
 
       if (id) {
@@ -107,10 +110,23 @@ export const handler = async (event) => {
 
     if (event.httpMethod === 'PATCH') {
       const data = JSON.parse(event.body);
-      const { id, is_verified } = data;
+      const { id, is_verified, action } = data;
 
       if (!id) {
         return { statusCode: 400, body: JSON.stringify({ error: 'Missing accommodation id' }) };
+      }
+
+      if (action === 'boost') {
+        const updatedAcc = await sql`
+          UPDATE accommodations
+          SET is_boosted = TRUE, boost_expires_at = NOW() + INTERVAL '7 days'
+          WHERE id = ${id}
+          RETURNING *;
+        `;
+        if (updatedAcc.length === 0) {
+          return { statusCode: 404, body: JSON.stringify({ error: 'Accommodation not found' }) };
+        }
+        return { statusCode: 200, body: JSON.stringify(updatedAcc[0]) };
       }
 
       const updatedAcc = await sql`
