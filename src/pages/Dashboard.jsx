@@ -81,6 +81,38 @@ export default function Dashboard() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef(null);
 
+  // Automatically calculate distance whenever map pin moves or target university changes
+  useEffect(() => {
+    if (!mapPosition) return;
+    
+    // If no university is selected yet, automatically detect the closest university!
+    if (!targetUni) {
+      let nearestUni = null;
+      let minDistance = Infinity;
+      SRI_LANKAN_UNIVERSITIES.forEach(u => {
+        const d = calculateHaversineDistance(mapPosition[0], mapPosition[1], u.lat, u.lng);
+        if (d !== null && d < minDistance) {
+          minDistance = d;
+          nearestUni = u;
+        }
+      });
+      if (nearestUni) {
+        setTargetUni(nearestUni.id);
+        setDistance(minDistance);
+        return;
+      }
+    }
+
+    // If a university is already selected, calculate distance to it
+    const uni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === targetUni);
+    if (uni) {
+      const calculatedKm = calculateHaversineDistance(mapPosition[0], mapPosition[1], uni.lat, uni.lng);
+      if (calculatedKm !== null) {
+        setDistance(calculatedKm);
+      }
+    }
+  }, [mapPosition, targetUni]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
