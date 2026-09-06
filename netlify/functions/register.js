@@ -11,10 +11,14 @@ export const handler = async (event) => {
 
   try {
     const sql = neon(process.env.DATABASE_URL);
-    const { role, name, email, password, contact_number } = JSON.parse(event.body);
+    const { role, name, email, password, contact_number, whatsapp_number } = JSON.parse(event.body);
 
     if (!role || !name || !email || !password) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+    }
+
+    if (role === 'landlord' && !contact_number?.trim()) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Phone number is mandatory for landlord registration' }) };
     }
 
     // Check if user already exists
@@ -29,9 +33,9 @@ export const handler = async (event) => {
 
     // Insert user
     const result = await sql`
-      INSERT INTO users (role, name, email, password_hash, contact_number)
-      VALUES (${role}, ${name}, ${email}, ${password_hash}, ${contact_number || null})
-      RETURNING id, role, name, email, contact_number, subscription_tier;
+      INSERT INTO users (role, name, email, password_hash, contact_number, whatsapp_number)
+      VALUES (${role}, ${name}, ${email}, ${password_hash}, ${contact_number || null}, ${whatsapp_number || contact_number || null})
+      RETURNING id, role, name, email, contact_number, whatsapp_number, subscription_tier, is_verified_landlord;
     `;
 
     const user = result[0];

@@ -14,6 +14,9 @@ export const handler = async (event) => {
         // Get specific accommodation with its reviews
         const accs = await sql`
           SELECT a.*, 
+            u_landlord.contact_number as landlord_phone,
+            u_landlord.whatsapp_number as landlord_whatsapp,
+            u_landlord.is_verified_landlord as landlord_verified,
             json_agg(
               json_build_object(
                 'id', r.id, 
@@ -24,10 +27,11 @@ export const handler = async (event) => {
               )
             ) FILTER (WHERE r.id IS NOT NULL) as reviews
           FROM accommodations a
+          LEFT JOIN users u_landlord ON a.landlord_id = u_landlord.id
           LEFT JOIN reviews r ON a.id = r.accommodation_id
           LEFT JOIN users u ON r.student_id = u.id
           WHERE a.id = ${id}
-          GROUP BY a.id
+          GROUP BY a.id, u_landlord.contact_number, u_landlord.whatsapp_number, u_landlord.is_verified_landlord
         `;
         
         if (accs.length === 0) {
@@ -38,23 +42,47 @@ export const handler = async (event) => {
 
       if (landlord_id) {
         // Get accommodations for a specific landlord
-        const accs = await sql`SELECT * FROM accommodations WHERE landlord_id = ${landlord_id} ORDER BY is_boosted DESC, created_at DESC`;
+        const accs = await sql`
+          SELECT a.*, u.contact_number as landlord_phone, u.whatsapp_number as landlord_whatsapp, u.is_verified_landlord as landlord_verified
+          FROM accommodations a
+          LEFT JOIN users u ON a.landlord_id = u.id
+          WHERE a.landlord_id = ${landlord_id} 
+          ORDER BY a.is_boosted DESC, a.created_at DESC
+        `;
         return { statusCode: 200, body: JSON.stringify(accs) };
       }
 
       if (admin) {
         if (status === 'active') {
           // List verified accommodations for admin
-          const accs = await sql`SELECT * FROM accommodations WHERE is_verified = TRUE ORDER BY created_at DESC`;
+          const accs = await sql`
+            SELECT a.*, u.name as landlord_name, u.contact_number as landlord_phone, u.whatsapp_number as landlord_whatsapp, u.is_verified_landlord as landlord_verified
+            FROM accommodations a
+            LEFT JOIN users u ON a.landlord_id = u.id
+            WHERE a.is_verified = TRUE 
+            ORDER BY a.created_at DESC
+          `;
           return { statusCode: 200, body: JSON.stringify(accs) };
         }
         // Default to unverified/pending accommodations for admin
-        const accs = await sql`SELECT * FROM accommodations WHERE is_verified = FALSE ORDER BY created_at ASC`;
+        const accs = await sql`
+          SELECT a.*, u.name as landlord_name, u.contact_number as landlord_phone, u.whatsapp_number as landlord_whatsapp, u.is_verified_landlord as landlord_verified
+          FROM accommodations a
+          LEFT JOIN users u ON a.landlord_id = u.id
+          WHERE a.is_verified = FALSE 
+          ORDER BY a.created_at ASC
+        `;
         return { statusCode: 200, body: JSON.stringify(accs) };
       }
 
       // List all verified accommodations for public
-      const accs = await sql`SELECT * FROM accommodations WHERE is_verified = TRUE ORDER BY is_boosted DESC, created_at DESC`;
+      const accs = await sql`
+        SELECT a.*, u.contact_number as landlord_phone, u.whatsapp_number as landlord_whatsapp, u.is_verified_landlord as landlord_verified
+        FROM accommodations a
+        LEFT JOIN users u ON a.landlord_id = u.id
+        WHERE a.is_verified = TRUE 
+        ORDER BY a.is_boosted DESC, a.created_at DESC
+      `;
       return { statusCode: 200, body: JSON.stringify(accs) };
     }
 

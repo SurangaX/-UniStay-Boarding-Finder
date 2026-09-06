@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { PlusCircle, Loader2, MapPin } from 'lucide-react';
+import { PlusCircle, Loader2, MapPin, ShieldCheck, CheckCircle2, Clock, UploadCloud, FileText, CheckCircle } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -122,6 +122,21 @@ export default function Dashboard() {
     }
   };
 
+  // Landlord Verification Application State
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verificationApp, setVerificationApp] = useState(null);
+  const [verifySubmitting, setVerifySubmitting] = useState(false);
+  const [verifyForm, setVerifyForm] = useState({
+    full_name: user?.name || '',
+    nic_number: '',
+    phone_number: user?.contact_number || '',
+    whatsapp_number: user?.whatsapp_number || user?.contact_number || '',
+    nic_front_url: '',
+    utility_bill_url: '',
+    payment_slip_url: '',
+    package_amount: 1490.00
+  });
+
   useEffect(() => {
     if (user?.role === 'landlord') {
       fetch(`/api/accommodations?landlord_id=${user.id}`)
@@ -130,8 +145,76 @@ export default function Dashboard() {
           setAccommodations(data);
           setLoading(false);
         });
+
+      // Fetch landlord's latest verification status
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch('/api/verifications', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+              setVerificationApp(data[0]); // most recent
+            }
+          })
+          .catch(err => console.error('Error fetching verification status', err));
+      }
     }
   }, [user]);
+
+  const handleDocUpload = (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2.5 * 1024 * 1024) {
+      alert('File size exceeds 2.5MB. Please upload a compressed photo or document.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setVerifyForm(prev => ({ ...prev, [field]: event.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const submitVerification = async (e) => {
+    e.preventDefault();
+    if (!verifyForm.nic_front_url || !verifyForm.utility_bill_url || !verifyForm.payment_slip_url) {
+      alert('Please upload your NIC, Utility Bill, and Bank Transfer Slip.');
+      return;
+    }
+
+    setVerifySubmitting(true);
+    const token = localStorage.getItem('token');
+
+    try {
+      const res = await fetch('/api/verifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(verifyForm)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVerificationApp(data);
+        setShowVerifyModal(false);
+        alert('Verification application and payment slip submitted successfully! Admin will review within 24-48 hours.');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to submit application');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error while submitting verification application.');
+    } finally {
+      setVerifySubmitting(false);
+    }
+  };
 
   const openAddForm = () => {
     setEditingId(null);
@@ -377,12 +460,27 @@ export default function Dashboard() {
             </span>
           )}
         </h1>
-        <div className="flex gap-4">
-          {(!user?.subscription_tier || user?.subscription_tier === 'free') && (
-            <button onClick={() => alert('Payment Gateway Integration Coming Soon!')} className="btn-secondary hidden sm:flex items-center gap-2 border-brand-500 text-brand-600 dark:text-brand-400">
-              Upgrade to Pro
+        <div className="flex flex-wrap gap-3 items-center">
+          {user?.is_verified_landlord ? (
+            <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 shadow-sm">
+              <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              Document Verified Landlord
+            </div>
+          ) : verificationApp?.status === 'pending' ? (
+            <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 shadow-sm">
+              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Verification Under Review
+            </div>
+          ) : (
+            <button 
+              onClick={() => setShowVerifyModal(true)} 
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-bold shadow-sm hover:shadow transition-all flex items-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Get Document Verified (LKR 1,490)</span>
             </button>
           )}
+
           <button onClick={showForm ? () => setShowForm(false) : openAddForm} className="btn-primary flex items-center gap-2">
             <PlusCircle className="w-5 h-5" /> {showForm ? 'Cancel' : 'Add Listing'}
           </button>
@@ -602,6 +700,171 @@ export default function Dashboard() {
           </table>
         </div>
       )}
+      {/* Landlord Verification Modal */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden my-8 border border-slate-200 dark:border-slate-700">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-start bg-slate-50 dark:bg-slate-900/40">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="p-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg">
+                    <ShieldCheck className="w-5 h-5" />
+                  </span>
+                  <h3 className="font-bold text-xl text-slate-900 dark:text-white">Apply for Document Verification</h3>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Earn the trusted "Document & Landlord Verified" badge across all your listings.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowVerifyModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={submitVerification} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* Fee Notice */}
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 rounded-xl p-4">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-bold text-blue-900 dark:text-blue-200">Verification Fee</span>
+                  <span className="text-lg font-extrabold text-blue-700 dark:text-blue-400">LKR 1,490 <span className="text-xs font-normal text-slate-500">/ one-time</span></span>
+                </div>
+                <p className="text-xs text-blue-800/80 dark:text-blue-300/80 leading-relaxed">
+                  Includes document authenticity validation, university proximity check, and unlocks the verified shield badge for 1 year.
+                </p>
+              </div>
+
+              {/* Personal Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name as per NIC *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="input-field text-sm" 
+                    value={verifyForm.full_name} 
+                    onChange={e => setVerifyForm(prev => ({ ...prev, full_name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">National Identity Card (NIC) *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. 198512345678 or 851234567V"
+                    className="input-field text-sm" 
+                    value={verifyForm.nic_number} 
+                    onChange={e => setVerifyForm(prev => ({ ...prev, nic_number: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Contact Phone *</label>
+                  <input 
+                    type="tel" 
+                    required 
+                    className="input-field text-sm" 
+                    value={verifyForm.phone_number} 
+                    onChange={e => setVerifyForm(prev => ({ ...prev, phone_number: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">WhatsApp Number *</label>
+                  <input 
+                    type="tel" 
+                    required 
+                    className="input-field text-sm" 
+                    value={verifyForm.whatsapp_number} 
+                    onChange={e => setVerifyForm(prev => ({ ...prev, whatsapp_number: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Document Uploads */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Required Verification Documents</h4>
+
+                {/* 1. NIC Front */}
+                <div className="p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">1. NIC Copy (Front) *</span>
+                    {verifyForm.nic_front_url && <span className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Uploaded</span>}
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*,.pdf" 
+                    required 
+                    onChange={e => handleDocUpload(e, 'nic_front_url')}
+                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/40 dark:file:text-blue-300"
+                  />
+                </div>
+
+                {/* 2. Utility Bill */}
+                <div className="p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">2. Proof of Address (Electricity or Water Bill) *</span>
+                    {verifyForm.utility_bill_url && <span className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Uploaded</span>}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">Must show property address and landlord/owner name within last 3 months.</p>
+                  <input 
+                    type="file" 
+                    accept="image/*,.pdf" 
+                    required 
+                    onChange={e => handleDocUpload(e, 'utility_bill_url')}
+                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/40 dark:file:text-blue-300"
+                  />
+                </div>
+
+                {/* 3. Bank Transfer Slip */}
+                <div className="p-3 border border-dashed border-blue-300 dark:border-blue-700/60 bg-blue-50/30 dark:bg-blue-950/20 rounded-xl">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">3. Bank Transfer / Deposit Slip (LKR 1,490) *</span>
+                    {verifyForm.payment_slip_url && <span className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Uploaded</span>}
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 mb-2 p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                    <p className="font-medium text-slate-800 dark:text-slate-200">Bank Details for Transfer:</p>
+                    <p>Bank: <span className="font-semibold">Bank of Ceylon (BOC)</span> | Account: <span className="font-semibold">8492019482</span></p>
+                    <p>Account Name: <span className="font-semibold">UniStay Student Services Pvt Ltd</span></p>
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*,.pdf" 
+                    required 
+                    onChange={e => handleDocUpload(e, 'payment_slip_url')}
+                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/40 dark:file:text-blue-300"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowVerifyModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={verifySubmitting}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {verifySubmitting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                  ) : (
+                    'Submit Verification Application'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

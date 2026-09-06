@@ -16,10 +16,12 @@ export default function AccommodationCard({ acc }) {
   // Determine utilities included
   const hasUtilities = acc.facilities && (acc.facilities.water || acc.facilities.electricity || acc.facilities.internet);
 
-  // Landlord contact phone or default
-  const landlordPhone = acc.landlord_phone || acc.contact_number || '94771234567';
-  const cleanPhone = landlordPhone.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('94') ? cleanPhone : '94' + cleanPhone.replace(/^0/, '')}?text=${encodeURIComponent(`Hello, I found your boarding listing "${acc.title}" on UniStay and would like to arrange an inspection.`)}`;
+  // Landlord contact phone or WhatsApp
+  const targetWhatsapp = acc.landlord_whatsapp || acc.whatsapp_number || acc.landlord_phone || acc.contact_number || '94771234567';
+  const cleanPhone = targetWhatsapp.replace(/[^0-9]/g, '');
+  const finalPhone = cleanPhone.startsWith('0') ? '94' + cleanPhone.slice(1) : (cleanPhone.startsWith('94') ? cleanPhone : '94' + cleanPhone);
+  const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(`Hello, I found your boarding listing "${acc.title}" on UniStay and would like to arrange an inspection.`)}`;
+  const isListingVerified = acc.is_verified || acc.landlord_verified;
 
   return (
     <>
@@ -39,7 +41,7 @@ export default function AccommodationCard({ acc }) {
                 🔥 Boosted
               </div>
             )}
-            {acc.is_verified && (
+            {isListingVerified && (
               <span className="px-2.5 py-1 bg-blue-600/90 backdrop-blur-md text-white font-semibold rounded-full text-xs shadow-md flex items-center gap-1 border border-white/20">
                 <ShieldCheck className="w-3.5 h-3.5" /> Document & Landlord Verified
               </span>

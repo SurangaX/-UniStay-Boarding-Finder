@@ -136,11 +136,13 @@ export default function AccommodationDetail() {
   const photos = acc.photos && acc.photos.length > 0 ? acc.photos : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000'];
 
   // Compute walking time and WhatsApp link
+  // Compute walking time and WhatsApp link
   const walkMinutes = acc.distance_to_uni ? Math.round(Number(acc.distance_to_uni) * 12) : null;
-  const rawPhone = acc.contact_number || acc.landlord_phone || '94771234567';
+  const rawPhone = acc.landlord_whatsapp || acc.whatsapp_number || acc.landlord_phone || acc.contact_number || '94771234567';
   const cleanPhone = String(rawPhone).replace(/[^0-9]/g, '');
   const finalPhone = cleanPhone.startsWith('0') ? '94' + cleanPhone.slice(1) : (cleanPhone.startsWith('94') ? cleanPhone : '94' + cleanPhone);
   const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(`Hello, I saw your UniStay listing "${acc.title}" and would like to inquire about availability and arrange a visit.`)}`;
+  const isListingVerified = acc.is_verified || acc.landlord_verified;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

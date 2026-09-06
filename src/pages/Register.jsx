@@ -9,8 +9,10 @@ export default function Register() {
     email: '',
     password: '',
     role: 'student',
-    contact_number: ''
+    contact_number: '',
+    whatsapp_number: ''
   });
+  const [sameAsPhone, setSameAsPhone] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -18,16 +20,39 @@ export default function Register() {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'contact_number' && sameAsPhone) {
+      setFormData(prev => ({ ...prev, contact_number: value, whatsapp_number: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleCheckboxChange = (e) => {
+    const checked = e.target.checked;
+    setSameAsPhone(checked);
+    if (checked) {
+      setFormData(prev => ({ ...prev, whatsapp_number: prev.contact_number }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (formData.role === 'landlord' && !formData.contact_number.trim()) {
+      setError('Phone number is mandatory for landlords.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await register(formData);
+      const payload = {
+        ...formData,
+        whatsapp_number: sameAsPhone ? formData.contact_number : formData.whatsapp_number
+      };
+      await register(payload);
       navigate('/');
     } catch (err) {
       setError(err.message || 'Failed to register. Please try again.');
@@ -129,16 +154,53 @@ export default function Register() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number (Optional)</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Phone Number {formData.role === 'landlord' ? <span className="text-red-500">* (Mandatory)</span> : '(Optional)'}
+              </label>
               <input
                 type="tel"
                 name="contact_number"
+                required={formData.role === 'landlord'}
                 className="input-field"
                 placeholder="+94 77 123 4567"
                 value={formData.contact_number}
                 onChange={handleChange}
               />
             </div>
+
+            {formData.role === 'landlord' && (
+              <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center">
+                  <input
+                    id="sameAsPhone"
+                    type="checkbox"
+                    checked={sameAsPhone}
+                    onChange={handleCheckboxChange}
+                    className="w-4 h-4 text-brand-600 bg-slate-100 border-slate-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:bg-slate-700 dark:border-slate-600"
+                  />
+                  <label htmlFor="sameAsPhone" className="ml-2 text-sm text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                    Use same number as WhatsApp number
+                  </label>
+                </div>
+
+                {!sameAsPhone && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      WhatsApp Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="whatsapp_number"
+                      required={!sameAsPhone}
+                      className="input-field text-sm"
+                      placeholder="+94 71 987 6543"
+                      value={formData.whatsapp_number}
+                      onChange={handleChange}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
