@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, BadgeCheck, X, Footprints, MessageSquareQuote, MessageCircle } from 'lucide-react';
+import { MapPin, BadgeCheck, X, Footprints, MessageSquareQuote, MessageCircle, ShieldCheck } from 'lucide-react';
 
 export default function AccommodationCard({ acc }) {
   const [showModal, setShowModal] = useState(false);
