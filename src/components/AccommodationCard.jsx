@@ -10,8 +10,8 @@ export default function AccommodationCard({ acc }) {
     : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400';
 
   // Calculate approximate walking minutes (approx. 12 mins per 1km)
-  const dist = parseFloat(acc.distance_to_uni) || 0.8;
-  const walkMinutes = Math.max(2, Math.round(dist * 12));
+  const displayDist = acc.computed_distance !== undefined ? acc.computed_distance : (parseFloat(acc.distance_to_uni) || 0.8);
+  const walkMinutes = Math.max(2, Math.round(displayDist * 12));
 
   // Determine utilities included
   const hasUtilities = acc.facilities && (acc.facilities.water || acc.facilities.electricity || acc.facilities.internet);
@@ -72,7 +72,7 @@ export default function AccommodationCard({ acc }) {
           <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mb-3 gap-2">
             <span className="flex items-center">
               <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" />
-              {acc.distance_to_uni} km from campus
+              {displayDist} km from campus
             </span>
             <span>•</span>
             <span className="text-slate-600 dark:text-slate-300 font-medium">Zero Broker Fee</span>
@@ -146,7 +146,7 @@ export default function AccommodationCard({ acc }) {
               <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400 mb-6 flex-wrap">
                 <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-700 text-xs font-medium flex items-center">
                   <MapPin className="w-3.5 h-3.5 mr-1.5 text-brand-500" />
-                  <span>{acc.distance_to_uni} km to campus</span>
+                  <span>{displayDist} km to campus</span>
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-700 text-xs font-medium flex items-center">
                   <Footprints className="w-3.5 h-3.5 mr-1.5 text-brand-500" />

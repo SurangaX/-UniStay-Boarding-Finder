@@ -19,7 +19,16 @@ export default function SearchResults() {
   const [maxDistance, setMaxDistance] = useState(initialDistance);
   const [selectedUniId, setSelectedUniId] = useState(initialUni);
 
+  // Keep state synchronized whenever URL search params change
   useEffect(() => {
+    setLocation(initialLocation);
+    setBudget(initialBudget);
+    setMaxDistance(initialDistance);
+    setSelectedUniId(initialUni);
+  }, [initialLocation, initialBudget, initialDistance, initialUni]);
+
+  useEffect(() => {
+    setLoading(true);
     fetch('/api/accommodations')
       .then(res => res.json())
       .then(data => {
@@ -27,12 +36,10 @@ export default function SearchResults() {
         const selectedUni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === initialUni);
 
         if (selectedUni) {
-          // Filter accommodations around selected university
           const uniCity = selectedUni.city.split(',')[0].toLowerCase().trim();
           const uniShort = selectedUni.shortName.toLowerCase().trim();
 
           filtered = filtered.map(acc => {
-            // Check if coordinates exist or calculate distance
             let dist = parseFloat(acc.distance_to_uni) || 1.2;
             if (acc.lat && acc.lng && selectedUni.lat && selectedUni.lng) {
               const geoDist = calculateHaversineDistance(parseFloat(acc.lat), parseFloat(acc.lng), selectedUni.lat, selectedUni.lng);
@@ -40,6 +47,9 @@ export default function SearchResults() {
             }
             return { ...acc, computed_distance: dist };
           });
+
+          // Sort by nearest to chosen university first
+          filtered.sort((a, b) => a.computed_distance - b.computed_distance);
         }
 
         if (initialLocation) {
@@ -72,14 +82,23 @@ export default function SearchResults() {
       });
   }, [initialLocation, initialBudget, initialDistance, initialUni]);
 
-  const updateFilters = (e) => {
-    e.preventDefault();
+  const applyFilters = (newLoc, newBudget, newDist, newUni) => {
+    const locVal = newLoc !== undefined ? newLoc : location;
+    const budVal = newBudget !== undefined ? newBudget : budget;
+    const distVal = newDist !== undefined ? newDist : maxDistance;
+    const uniVal = newUni !== undefined ? newUni : selectedUniId;
+
     const params = new URLSearchParams();
-    if (location) params.append('location', location);
-    if (budget) params.append('budget', budget);
-    if (maxDistance) params.append('max_distance', maxDistance);
-    if (selectedUniId) params.append('uni', selectedUniId);
+    if (locVal) params.append('location', locVal);
+    if (budVal) params.append('budget', budVal);
+    if (distVal) params.append('max_distance', distVal);
+    if (uniVal) params.append('uni', uniVal);
     setSearchParams(params);
+  };
+
+  const updateFilters = (e) => {
+    if (e) e.preventDefault();
+    applyFilters();
   };
 
   return (
@@ -118,28 +137,31 @@ export default function SearchResults() {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <School className="w-4 h-4 text-brand-600" />
+                  <School className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
                   <span>Target University</span>
                 </label>
-                <select 
-                  className="input-field text-xs sm:text-sm"
-                  value={selectedUniId}
-                  onChange={(e) => {
-                    const uniId = e.target.value;
-                    setSelectedUniId(uniId);
-                    const uni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === uniId);
-                    if (uni && !location) {
-                      setLocation(uni.city.split(',')[0]);
-                    }
-                  }}
-                >
-                  <option value="">All Universities in Sri Lanka</option>
-                  {SRI_LANKAN_UNIVERSITIES.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.shortName} ({u.city})
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select 
+                    className="input-field text-xs sm:text-sm truncate pr-8 cursor-pointer"
+                    value={selectedUniId}
+                    onChange={(e) => {
+                      const uniId = e.target.value;
+                      setSelectedUniId(uniId);
+                      const uni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === uniId);
+                      const newCity = uni ? uni.city.split(',')[0].trim() : '';
+                      setLocation(newCity);
+                      // Instantly apply the switch to update URL and search results immediately
+                      applyFilters(newCity, budget, maxDistance, uniId);
+                    }}
+                  >
+                    <option value="">All Universities in Sri Lanka</option>
+                    {SRI_LANKAN_UNIVERSITIES.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.shortName} ({u.city.split(',')[0]})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="mb-4">
