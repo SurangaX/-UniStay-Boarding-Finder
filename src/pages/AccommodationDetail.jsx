@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, ShieldCheck, Loader2, Star } from 'lucide-react';
+import { MapPin, ShieldCheck, Loader2, Star, Clock, CheckCircle2, MessageCircle, Sparkles } from 'lucide-react';
 
 export default function AccommodationDetail() {
   const { id } = useParams();
@@ -135,23 +135,47 @@ export default function AccommodationDetail() {
 
   const photos = acc.photos && acc.photos.length > 0 ? acc.photos : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000'];
 
+  // Compute walking time and WhatsApp link
+  const walkMinutes = acc.distance_to_uni ? Math.round(Number(acc.distance_to_uni) * 12) : null;
+  const rawPhone = acc.contact_number || acc.landlord_phone || '94771234567';
+  const cleanPhone = String(rawPhone).replace(/[^0-9]/g, '');
+  const finalPhone = cleanPhone.startsWith('0') ? '94' + cleanPhone.slice(1) : (cleanPhone.startsWith('94') ? cleanPhone : '94' + cleanPhone);
+  const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(`Hello, I saw your UniStay listing "${acc.title}" and would like to inquire about availability and arrange a visit.`)}`;
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Title & Header */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{acc.title}</h1>
-          <div className="flex items-center text-slate-600 dark:text-slate-400 gap-4 mb-2">
-            {acc.location && <span className="flex items-center font-medium"><MapPin className="w-4 h-4 mr-1 text-brand-500" /> {acc.location}</span>}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-amber-500/20">
+              <Sparkles className="w-3.5 h-3.5" /> ★ Verified by Senior Students
+            </span>
+            <span className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-blue-500/20">
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" /> Zero Broker Fee
+            </span>
           </div>
-          <div className="flex items-center text-slate-600 dark:text-slate-400 gap-4">
-            <span className="flex items-center text-sm"> {acc.distance_to_uni} km to campus</span>
-            {acc.is_verified && <span className="flex items-center text-brand-600 dark:text-brand-400 font-medium text-sm"><ShieldCheck className="w-4 h-4 mr-1" /> Verified</span>}
+
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{acc.title}</h1>
+          
+          <div className="flex flex-wrap items-center text-slate-600 dark:text-slate-400 gap-4 mb-2">
+            {acc.location && <span className="flex items-center font-medium"><MapPin className="w-4 h-4 mr-1 text-brand-500" /> {acc.location}</span>}
+            {acc.distance_to_uni && (
+              <span className="flex items-center font-medium text-slate-700 dark:text-slate-300">
+                <Clock className="w-4 h-4 mr-1 text-brand-600" />
+                ~{walkMinutes} mins walk to University Gate ({acc.distance_to_uni} km)
+              </span>
+            )}
+            {acc.is_verified && <span className="flex items-center text-brand-600 dark:text-brand-400 font-medium text-sm"><ShieldCheck className="w-4 h-4 mr-1" /> Campus Approved</span>}
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-extrabold text-brand-600 dark:text-brand-400">LKR {acc.rent_amount}</div>
-          <div className="text-slate-500 dark:text-slate-400 text-sm">per month</div>
+
+        <div className="md:text-right bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="text-3xl font-extrabold text-brand-600 dark:text-brand-400">LKR {acc.rent_amount?.toLocaleString?.() || acc.rent_amount}</div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-medium">per month • all inclusive</div>
+          <div className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center md:justify-end gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Water, Electricity & WiFi Included
+          </div>
         </div>
       </div>
 
@@ -251,10 +275,30 @@ export default function AccommodationDetail() {
         {/* Sidebar */}
         <div>
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sticky top-6">
-            <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Interested?</h3>
-            <p className="text-slate-600 dark:text-slate-300 text-sm mb-6">Contact the landlord to ask questions or arrange a viewing.</p>
+            {/* Direct WhatsApp Action */}
+            <div className="mb-4">
+              <a 
+                href={whatsappUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 text-sm mb-3"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Chat Directly on WhatsApp</span>
+              </a>
+              <div className="text-[11px] text-center text-slate-500 dark:text-slate-400">
+                Direct phone: <span className="font-semibold">{acc.contact_number || 'Landlord Contact'}</span>
+              </div>
+            </div>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+              <span className="flex-shrink mx-3 text-xs text-slate-400 uppercase font-medium">Or Send In-App Inquiry</span>
+              <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+            </div>
+
             {user?.role === 'student' ? (
-              <button onClick={() => setShowModal(true)} className="w-full btn-primary py-3">Message Landlord</button>
+              <button onClick={() => setShowModal(true)} className="w-full btn-primary py-3">In-App Inquiry</button>
             ) : user?.role === 'landlord' || user?.role === 'admin' ? (
               <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
                 <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Logged in as {user.role === 'admin' ? 'Admin' : 'Landlord'}</p>

@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="max-w-sm">
             <Link to="/" className="flex items-center gap-2 text-brand-600 dark:text-brand-500 hover:opacity-80 transition-opacity mb-4">
               <Home className="h-6 w-6" />
-              <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">UniBoarding</span>
+              <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">UniStay</span>
             </Link>
             <p className="text-slate-600 dark:text-slate-400 text-sm">
               The premier platform for university students to find safe, comfortable, and affordable accommodations near campus.

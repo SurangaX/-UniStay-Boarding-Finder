@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, BadgeCheck, X } from 'lucide-react';
+import { MapPin, BadgeCheck, X, Footprints, MessageSquareQuote, MessageCircle } from 'lucide-react';
 
 export default function AccommodationCard({ acc }) {
   const [showModal, setShowModal] = useState(false);
@@ -8,6 +8,18 @@ export default function AccommodationCard({ acc }) {
   const thumbnail = acc.photos && acc.photos.length > 0 
     ? acc.photos[0] 
     : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400';
+
+  // Calculate approximate walking minutes (approx. 12 mins per 1km)
+  const dist = parseFloat(acc.distance_to_uni) || 0.8;
+  const walkMinutes = Math.max(2, Math.round(dist * 12));
+
+  // Determine utilities included
+  const hasUtilities = acc.facilities && (acc.facilities.water || acc.facilities.electricity || acc.facilities.internet);
+
+  // Landlord contact phone or default
+  const landlordPhone = acc.landlord_phone || acc.contact_number || '94771234567';
+  const cleanPhone = landlordPhone.replace(/[^0-9]/g, '');
+  const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('94') ? cleanPhone : '94' + cleanPhone.replace(/^0/, '')}?text=${encodeURIComponent(`Hello, I found your boarding listing "${acc.title}" on UniStay and would like to arrange an inspection.`)}`;
 
   return (
     <>
@@ -28,11 +40,17 @@ export default function AccommodationCard({ acc }) {
               </div>
             )}
             {acc.is_verified && (
-              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 shadow-sm">
-                <BadgeCheck className="w-4 h-4" />
-                Verified
+              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1 text-xs font-bold text-brand-600 dark:text-brand-400 shadow-sm border border-brand-200 dark:border-brand-800">
+                <BadgeCheck className="w-4 h-4 text-brand-500" />
+                ★ Verified by Seniors
               </div>
             )}
+          </div>
+
+          {/* Walking time chip on photo */}
+          <div className="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1">
+            <Footprints className="w-3.5 h-3.5 text-brand-400" />
+            <span>~{walkMinutes} mins walk to gate</span>
           </div>
         </div>
         
@@ -42,19 +60,28 @@ export default function AccommodationCard({ acc }) {
             onClick={() => setShowModal(true)}
           >
             <h3 className="font-semibold text-lg text-slate-900 dark:text-white leading-tight line-clamp-1 flex-1 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">{acc.title}</h3>
-            <div className="font-bold text-brand-600 dark:text-brand-400 text-lg whitespace-nowrap shrink-0">LKR {acc.rent_amount}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mo</span></div>
+            <div className="text-right whitespace-nowrap shrink-0">
+              <div className="font-bold text-brand-600 dark:text-brand-400 text-lg">LKR {acc.rent_amount}<span className="text-xs font-normal text-slate-500 dark:text-slate-400">/mo</span></div>
+              {hasUtilities && (
+                <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">✓ Utilities Included</div>
+              )}
+            </div>
           </div>
           
-          <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mb-4">
-            <MapPin className="w-4 h-4 mr-1 text-slate-400 dark:text-slate-500" />
-            {acc.distance_to_uni} km from campus
+          <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mb-3 gap-2">
+            <span className="flex items-center">
+              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" />
+              {acc.distance_to_uni} km from campus
+            </span>
+            <span>•</span>
+            <span className="text-slate-600 dark:text-slate-300 font-medium">Zero Broker Fee</span>
           </div>
           
-          <div className="flex flex-wrap gap-2 mb-4 flex-1">
+          <div className="flex flex-wrap gap-1.5 mb-4 flex-1">
             {acc.facilities && Object.entries(acc.facilities).map(([key, value]) => {
               if (value) {
                 return (
-                  <span key={key} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-md capitalize border border-transparent dark:border-slate-600">
+                  <span key={key} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-md capitalize border border-transparent dark:border-slate-600">
                     {key}
                   </span>
                 );
@@ -63,19 +90,23 @@ export default function AccommodationCard({ acc }) {
             })}
           </div>
           
-          <div className="flex gap-2 mt-auto">
-            <button 
-              onClick={() => setShowModal(true)}
-              className="flex-1 text-center py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm"
-            >
-              Quick View
-            </button>
+          <div className="flex gap-2 mt-auto pt-2 border-t border-slate-100 dark:border-slate-700/60">
             <Link 
               to={`/accommodation/${acc.id}`}
-              className="flex-1 text-center py-2 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 font-medium rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors text-sm"
+              className="flex-1 text-center py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs"
             >
-              Full Details
+              Details
             </Link>
+            <a 
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 text-center py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors text-xs flex items-center justify-center gap-1 shadow-sm"
+              title="Direct Landlord WhatsApp Chat"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>WhatsApp</span>
+            </a>
           </div>
         </div>
       </div>
@@ -92,30 +123,42 @@ export default function AccommodationCard({ acc }) {
                 <X className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
               </button>
               {acc.is_verified && (
-                <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-400 shadow-sm">
-                  <BadgeCheck className="w-4 h-4" />
-                  Verified Listing
+                <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400 shadow-sm border border-brand-200 dark:border-brand-800">
+                  <BadgeCheck className="w-4 h-4 text-brand-500" />
+                  Verified by Senior Students
                 </div>
               )}
             </div>
             
             <div className="p-6 overflow-y-auto">
-              <div className="flex justify-between items-start gap-4 mb-4">
+              <div className="flex justify-between items-start gap-4 mb-3">
                 <h3 className="font-bold text-2xl text-slate-900 dark:text-white leading-tight">{acc.title}</h3>
                 <div className="text-right shrink-0">
                   <div className="font-extrabold text-brand-600 dark:text-brand-400 text-xl">LKR {acc.rent_amount}</div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">per month</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">per month</div>
+                  {hasUtilities && (
+                    <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">✓ Utilities Included</div>
+                  )}
                 </div>
               </div>
               
-              <div className="flex items-center text-slate-600 dark:text-slate-400 mb-6 bg-slate-50 dark:bg-slate-900/50 w-fit px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
-                <MapPin className="w-4 h-4 mr-2 text-brand-500" />
-                <span className="font-medium">{acc.distance_to_uni} km</span> <span className="ml-1 text-slate-500">from campus</span>
+              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400 mb-6 flex-wrap">
+                <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-700 text-xs font-medium flex items-center">
+                  <MapPin className="w-3.5 h-3.5 mr-1.5 text-brand-500" />
+                  <span>{acc.distance_to_uni} km to campus</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-700 text-xs font-medium flex items-center">
+                  <Footprints className="w-3.5 h-3.5 mr-1.5 text-brand-500" />
+                  <span>~{walkMinutes} mins walk to gate</span>
+                </div>
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 text-xs font-semibold">
+                  Zero Broker Commission
+                </div>
               </div>
               
               {acc.description && (
                 <div className="mb-6">
-                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Description</h4>
+                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2 text-sm">Description</h4>
                   <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
                     {acc.description}
                   </p>
@@ -123,13 +166,13 @@ export default function AccommodationCard({ acc }) {
               )}
               
               {acc.facilities && Object.keys(acc.facilities).some(k => acc.facilities[k]) && (
-                <div className="mb-8">
-                  <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Amenities</h4>
+                <div className="mb-6">
+                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2 text-sm">Amenities & Utilities</h4>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(acc.facilities).map(([key, value]) => {
                       if (value) {
                         return (
-                          <span key={key} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg capitalize">
+                          <span key={key} className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg capitalize">
                             {key}
                           </span>
                         );
@@ -140,13 +183,22 @@ export default function AccommodationCard({ acc }) {
                 </div>
               )}
               
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
                 <Link 
                   to={`/accommodation/${acc.id}`}
-                  className="block w-full text-center py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 shadow-sm hover:shadow transition-all hover:-translate-y-0.5"
+                  className="flex-1 text-center py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-all text-sm"
                 >
-                  View Full Details & Contact Landlord
+                  Full Details & Reviews
                 </Link>
+                <a 
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 text-center py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Chat on WhatsApp</span>
+                </a>
               </div>
             </div>
           </div>

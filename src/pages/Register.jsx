@@ -47,7 +47,7 @@ export default function Register() {
             Create an account
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
-            Join UniBoarding today
+            Join UniStay today
           </p>
         </div>
         

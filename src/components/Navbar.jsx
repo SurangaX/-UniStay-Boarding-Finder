@@ -22,7 +22,7 @@ export default function Navbar() {
           <div className="flex">
             <Link to="/" className="flex-shrink-0 flex items-center gap-2 text-brand-600 dark:text-brand-500 hover:opacity-80 transition-opacity">
               <Home className="h-6 w-6" />
-              <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">UniBoarding</span>
+              <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">UniStay</span>
             </Link>
           </div>
           
