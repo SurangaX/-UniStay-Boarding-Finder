@@ -40,10 +40,9 @@ export default function AccommodationCard({ acc }) {
               </div>
             )}
             {acc.is_verified && (
-              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1 text-xs font-bold text-brand-600 dark:text-brand-400 shadow-sm border border-brand-200 dark:border-brand-800">
-                <BadgeCheck className="w-4 h-4 text-brand-500" />
-                ★ Verified by Seniors
-              </div>
+              <span className="px-2.5 py-1 bg-blue-600/90 backdrop-blur-md text-white font-semibold rounded-full text-xs shadow-md flex items-center gap-1 border border-white/20">
+                <ShieldCheck className="w-3.5 h-3.5" /> Document & Landlord Verified
+              </span>
             )}
           </div>
 

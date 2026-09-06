@@ -148,11 +148,11 @@ export default function AccommodationDetail() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-amber-500/20">
-              <Sparkles className="w-3.5 h-3.5" /> ★ Verified by Senior Students
-            </span>
             <span className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-blue-500/20">
-              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" /> Zero Broker Fee
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Document & Landlord Verified
+            </span>
+            <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-emerald-500/20">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Zero Broker Fee
             </span>
           </div>
 
