@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2 } from 'lucide-react';
+import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2, School } from 'lucide-react';
 import AccommodationCard from '../components/AccommodationCard';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { SRI_LANKAN_UNIVERSITIES } from '../data/universities';
 
 // Fix for default Leaflet icon paths in Vite
 delete L.Icon.Default.prototype._getIconUrl;
@@ -59,6 +60,7 @@ function MapUpdater({ position }) {
 }
 
 export default function Home() {
+  const [selectedUni, setSelectedUni] = useState('');
   const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
   const [maxDistance, setMaxDistance] = useState('');
@@ -163,6 +165,7 @@ export default function Home() {
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
+    if (selectedUni) params.append('uni', selectedUni);
     if (location) params.append('location', location);
     if (budget) params.append('budget', budget);
     if (maxDistance) params.append('max_distance', maxDistance);
@@ -220,17 +223,47 @@ export default function Home() {
             </div>
 
             {/* Filter Forms */}
-            <div className="w-full md:w-[50%] flex flex-col justify-center space-y-4 px-2 py-4">
+            <div className="w-full md:w-[50%] flex flex-col justify-center space-y-3 px-2 py-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                  <School className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                  <span>Select University (Sri Lanka)</span>
+                </label>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-slate-700">
+                  <select 
+                    className="w-full bg-transparent border-none p-0 focus:ring-0 text-sm font-medium text-slate-900 dark:text-white outline-none cursor-pointer"
+                    value={selectedUni}
+                    onChange={(e) => {
+                      const uniId = e.target.value;
+                      setSelectedUni(uniId);
+                      const uni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === uniId);
+                      if (uni) {
+                        setMapPosition([uni.lat, uni.lng]);
+                        if (!location || location === '') {
+                          setLocation(uni.city.split(',')[0]);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="" className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">Choose Your Campus / University</option>
+                    {SRI_LANKAN_UNIVERSITIES.map(u => (
+                      <option key={u.id} value={u.id} className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">
+                        {u.name} ({u.city})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div ref={wrapperRef}>
-                <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1.5">Search Location</label>
-                <div className="text-xs text-slate-500 mb-2">Click on the map or type to set your location.</div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-1">Search Location</label>
                 <div className="relative">
-                  <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700 z-[60]">
-                    <MapPin className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0" />
+                  <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-slate-700 z-[60]">
+                    <MapPin className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" />
                     <input 
                       type="text" 
-                      placeholder="e.g. Colombo 07..."
-                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 outline-none"
+                      placeholder="e.g. Kelaniya, Colombo 07..."
+                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none"
                       value={location}
                       onChange={handleLocationChange}
                       onFocus={() => setShowSuggestions(true)}

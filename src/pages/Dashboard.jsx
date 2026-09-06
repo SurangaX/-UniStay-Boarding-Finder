@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { PlusCircle, Loader2, MapPin, ShieldCheck, CheckCircle2, Clock, UploadCloud, FileText, CheckCircle, CreditCard, Zap, Flame } from 'lucide-react';
+import { PlusCircle, Loader2, MapPin, ShieldCheck, CheckCircle2, Clock, UploadCloud, FileText, CheckCircle, CreditCard, Zap, Flame, School } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { SRI_LANKAN_UNIVERSITIES, calculateHaversineDistance } from '../data/universities';
 
 // Fix for default Leaflet icon paths in Vite
 delete L.Icon.Default.prototype._getIconUrl;
@@ -71,6 +72,7 @@ export default function Dashboard() {
   const [mapPosition, setMapPosition] = useState(null); // Initialize with null until clicked
   const [rentAmount, setRentAmount] = useState('');
   const [distance, setDistance] = useState('');
+  const [targetUni, setTargetUni] = useState('');
   const [photoInputType, setPhotoInputType] = useState('upload'); // 'upload' or 'url'
   const [photosText, setPhotosText] = useState('');
   const [base64Photos, setBase64Photos] = useState([]);
@@ -231,6 +233,7 @@ export default function Dashboard() {
     setMapPosition(null);
     setRentAmount('');
     setDistance('');
+    setTargetUni('');
     setPhotosText('');
     setBase64Photos([]);
     setPhotoInputType('upload');
@@ -245,6 +248,7 @@ export default function Dashboard() {
     setMapPosition(null); // Reset map pin on edit unless we saved coordinates (which we don't yet)
     setRentAmount(acc.rent_amount);
     setDistance(acc.distance_to_uni);
+    setTargetUni('');
     
     const existingPhotos = acc.photos || [];
     const regularUrls = existingPhotos.filter(p => p.startsWith('http') || p.startsWith('/'));
@@ -611,6 +615,36 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <School className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                  <span>Nearest Campus / University (Sri Lanka)</span>
+                </span>
+                <span className="text-xs text-slate-500 font-normal">Auto-calculates distance from map pin</span>
+              </label>
+              <select
+                className="input-field text-sm"
+                value={targetUni}
+                onChange={(e) => {
+                  const uniId = e.target.value;
+                  setTargetUni(uniId);
+                  const uni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === uniId);
+                  if (uni && mapPosition) {
+                    const calculatedKm = calculateHaversineDistance(mapPosition[0], mapPosition[1], uni.lat, uni.lng);
+                    setDistance(calculatedKm);
+                  }
+                }}
+              >
+                <option value="">Select University to calculate distance...</option>
+                {SRI_LANKAN_UNIVERSITIES.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.city})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-1">Rent Amount (LKR)</label>
@@ -618,7 +652,15 @@ export default function Dashboard() {
               </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-1">Distance to Uni (km)</label>
-                <input type="number" required step="0.1" className="input-field" value={distance} onChange={e => setDistance(e.target.value)} />
+                <input 
+                  type="number" 
+                  required 
+                  step="0.1" 
+                  className="input-field" 
+                  value={distance} 
+                  placeholder="e.g. 1.5"
+                  onChange={e => setDistance(e.target.value)} 
+                />
               </div>
             </div>
             

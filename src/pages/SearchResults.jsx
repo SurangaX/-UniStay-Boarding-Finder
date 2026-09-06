@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AccommodationCard from '../components/AccommodationCard';
-import { Loader2 } from 'lucide-react';
+import { Loader2, School } from 'lucide-react';
+import { SRI_LANKAN_UNIVERSITIES, calculateHaversineDistance } from '../data/universities';
 
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -11,16 +12,36 @@ export default function SearchResults() {
   const initialLocation = searchParams.get('location') || '';
   const initialBudget = searchParams.get('budget') || '';
   const initialDistance = searchParams.get('max_distance') || '';
+  const initialUni = searchParams.get('uni') || '';
 
   const [location, setLocation] = useState(initialLocation);
   const [budget, setBudget] = useState(initialBudget);
   const [maxDistance, setMaxDistance] = useState(initialDistance);
+  const [selectedUniId, setSelectedUniId] = useState(initialUni);
 
   useEffect(() => {
     fetch('/api/accommodations')
       .then(res => res.json())
       .then(data => {
         let filtered = data;
+        const selectedUni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === initialUni);
+
+        if (selectedUni) {
+          // Filter accommodations around selected university
+          const uniCity = selectedUni.city.split(',')[0].toLowerCase().trim();
+          const uniShort = selectedUni.shortName.toLowerCase().trim();
+
+          filtered = filtered.map(acc => {
+            // Check if coordinates exist or calculate distance
+            let dist = parseFloat(acc.distance_to_uni) || 1.2;
+            if (acc.lat && acc.lng && selectedUni.lat && selectedUni.lng) {
+              const geoDist = calculateHaversineDistance(parseFloat(acc.lat), parseFloat(acc.lng), selectedUni.lat, selectedUni.lng);
+              if (geoDist !== null) dist = geoDist;
+            }
+            return { ...acc, computed_distance: dist };
+          });
+        }
+
         if (initialLocation) {
           const mainLocation = initialLocation.split(',')[0].toLowerCase().trim();
           filtered = filtered.filter(a => {
@@ -30,12 +51,18 @@ export default function SearchResults() {
             return locMatch || titleMatch || descMatch;
           });
         }
+
         if (initialBudget) {
           filtered = filtered.filter(a => parseFloat(a.rent_amount) <= parseFloat(initialBudget));
         }
+
         if (initialDistance) {
-          filtered = filtered.filter(a => parseFloat(a.distance_to_uni) <= parseFloat(initialDistance));
+          filtered = filtered.filter(a => {
+            const d = a.computed_distance !== undefined ? a.computed_distance : parseFloat(a.distance_to_uni);
+            return d <= parseFloat(initialDistance);
+          });
         }
+
         setAccommodations(filtered);
         setLoading(false);
       })
@@ -43,7 +70,7 @@ export default function SearchResults() {
         console.error(err);
         setLoading(false);
       });
-  }, [initialLocation, initialBudget]);
+  }, [initialLocation, initialBudget, initialDistance, initialUni]);
 
   const updateFilters = (e) => {
     e.preventDefault();
@@ -51,6 +78,7 @@ export default function SearchResults() {
     if (location) params.append('location', location);
     if (budget) params.append('budget', budget);
     if (maxDistance) params.append('max_distance', maxDistance);
+    if (selectedUniId) params.append('uni', selectedUniId);
     setSearchParams(params);
   };
 
@@ -88,7 +116,33 @@ export default function SearchResults() {
                   <option value="50000">40,000+</option>
                 </select>
               </div>
-              <div className="mb-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <School className="w-4 h-4 text-brand-600" />
+                  <span>Target University</span>
+                </label>
+                <select 
+                  className="input-field text-xs sm:text-sm"
+                  value={selectedUniId}
+                  onChange={(e) => {
+                    const uniId = e.target.value;
+                    setSelectedUniId(uniId);
+                    const uni = SRI_LANKAN_UNIVERSITIES.find(u => u.id === uniId);
+                    if (uni && !location) {
+                      setLocation(uni.city.split(',')[0]);
+                    }
+                  }}
+                >
+                  <option value="">All Universities in Sri Lanka</option>
+                  {SRI_LANKAN_UNIVERSITIES.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.shortName} ({u.city})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Distance to Uni (km)</label>
                 <select 
                   className="input-field"
@@ -96,8 +150,9 @@ export default function SearchResults() {
                   onChange={(e) => setMaxDistance(e.target.value)}
                 >
                   <option value="">Any Distance</option>
-                  <option value="1">Within 1 km</option>
-                  <option value="2">Within 2 km</option>
+                  <option value="1">Within 1 km (&lt; 12 mins walk)</option>
+                  <option value="2">Within 2 km (&lt; 25 mins walk)</option>
+                  <option value="3">Within 3 km (Campus Radius)</option>
                   <option value="5">Within 5 km</option>
                   <option value="10">Within 10 km</option>
                 </select>
