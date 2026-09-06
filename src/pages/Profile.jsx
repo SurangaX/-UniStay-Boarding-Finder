@@ -1,17 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { UserCircle2, Loader2, Save, Mail, ShieldCheck } from 'lucide-react';
+import { UserCircle2, Loader2, Save, Mail, ShieldCheck, Phone, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
+  const [contactNumber, setContactNumber] = useState(user?.contact_number || '');
+  const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsapp_number || '');
+  const [sameAsPhone, setSameAsPhone] = useState(
+    Boolean(user?.contact_number && user?.whatsapp_number && user.contact_number === user.whatsapp_number)
+  );
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+
+  // Synchronize when user data loads or updates
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setContactNumber(user.contact_number || '');
+      setWhatsappNumber(user.whatsapp_number || '');
+      if (user.contact_number && user.whatsapp_number && user.contact_number === user.whatsapp_number) {
+        setSameAsPhone(true);
+      }
+    }
+  }, [user]);
 
   // If somehow a non-logged-in user gets here
   if (!user) {
@@ -19,10 +36,38 @@ export default function Profile() {
     return null;
   }
 
+  const handlePhoneChange = (e) => {
+    const val = e.target.value;
+    setContactNumber(val);
+    if (sameAsPhone) {
+      setWhatsappNumber(val);
+    }
+  };
+
+  const handleCheckboxChange = (e) => {
+    const checked = e.target.checked;
+    setSameAsPhone(checked);
+    if (checked) {
+      setWhatsappNumber(contactNumber);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (name.trim() === '') {
       setMessage({ type: 'error', text: 'Name cannot be empty' });
+      return;
+    }
+
+    if (user.role === 'landlord' && !contactNumber.trim()) {
+      setMessage({ type: 'error', text: 'Phone number is mandatory for landlords.' });
+      return;
+    }
+
+    const finalWhatsapp = sameAsPhone ? contactNumber : whatsappNumber;
+
+    if (user.role === 'landlord' && !finalWhatsapp.trim()) {
+      setMessage({ type: 'error', text: 'WhatsApp number is mandatory for landlords.' });
       return;
     }
 
@@ -47,6 +92,8 @@ export default function Profile() {
       await updateProfile({ 
         id: user.id, 
         name, 
+        contact_number: contactNumber,
+        whatsapp_number: finalWhatsapp,
         currentPassword: currentPassword || undefined,
         newPassword: newPassword || undefined
       });
@@ -121,19 +168,80 @@ export default function Profile() {
             <div className="border-t border-slate-100 dark:border-slate-700 pt-8">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Personal Details</h3>
               
-              {/* Name (Editable) */}
-              <div className="max-w-md mb-8">
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Full Name
-                </label>
-                <input 
-                  type="text" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. John Doe"
-                  required
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
-                />
+              <div className="max-w-md space-y-6 mb-8">
+                {/* Name (Editable) */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    Full Name
+                  </label>
+                  <input 
+                    type="text" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    required
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
+                  />
+                </div>
+
+                {/* Contact Phone Number (Editable) */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Phone className="w-4 h-4 text-slate-400" />
+                      <span>Phone Number</span>
+                    </span>
+                    {user.role === 'landlord' && (
+                      <span className="text-xs font-semibold text-red-500">Mandatory for Landlords</span>
+                    )}
+                  </label>
+                  <input 
+                    type="tel" 
+                    value={contactNumber}
+                    onChange={handlePhoneChange}
+                    placeholder="+94 77 123 4567"
+                    required={user.role === 'landlord'}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all"
+                  />
+                </div>
+
+                {/* WhatsApp Number (Editable with Same as Phone toggle) */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <MessageCircle className="w-4 h-4 text-emerald-500" />
+                      <span>WhatsApp Number</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={sameAsPhone}
+                        onChange={handleCheckboxChange}
+                        className="w-4 h-4 text-brand-600 bg-slate-100 border-slate-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:bg-slate-700 dark:border-slate-600"
+                      />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Same as Phone</span>
+                    </label>
+                  </div>
+
+                  {!sameAsPhone && (
+                    <div>
+                      <input 
+                        type="tel" 
+                        value={whatsappNumber}
+                        onChange={(e) => setWhatsappNumber(e.target.value)}
+                        placeholder="+94 71 987 6543"
+                        required={user.role === 'landlord'}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none transition-all text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {sameAsPhone && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Using <span className="font-semibold text-slate-700 dark:text-slate-300">{contactNumber || 'phone number'}</span> as WhatsApp contact for boarding inquiries.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Change Password</h3>

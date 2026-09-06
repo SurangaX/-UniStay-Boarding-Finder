@@ -11,7 +11,7 @@ export const handler = async (event) => {
     }
 
     if (event.httpMethod === 'PUT') {
-      const { id, name, currentPassword, newPassword } = JSON.parse(event.body);
+      const { id, name, currentPassword, newPassword, contact_number, whatsapp_number } = JSON.parse(event.body);
       
       if (!id || !name) {
         return { statusCode: 400, body: JSON.stringify({ error: 'Missing id or name' }) };
@@ -31,17 +31,22 @@ export const handler = async (event) => {
         
         const updatedUsers = await sql`
           UPDATE users 
-          SET name = ${name}, password_hash = ${password_hash}
+          SET name = ${name}, 
+              password_hash = ${password_hash},
+              contact_number = ${contact_number !== undefined ? contact_number : sql`contact_number`},
+              whatsapp_number = ${whatsapp_number !== undefined ? whatsapp_number : sql`whatsapp_number`}
           WHERE id = ${id}
-          RETURNING id, role, name, email
+          RETURNING id, role, name, email, contact_number, whatsapp_number, subscription_tier, is_verified_landlord
         `;
         return { statusCode: 200, body: JSON.stringify(updatedUsers[0]) };
       } else {
         const updatedUsers = await sql`
           UPDATE users 
-          SET name = ${name}
+          SET name = ${name},
+              contact_number = ${contact_number !== undefined ? contact_number : sql`contact_number`},
+              whatsapp_number = ${whatsapp_number !== undefined ? whatsapp_number : sql`whatsapp_number`}
           WHERE id = ${id}
-          RETURNING id, role, name, email
+          RETURNING id, role, name, email, contact_number, whatsapp_number, subscription_tier, is_verified_landlord
         `;
         
         if (updatedUsers.length === 0) {
