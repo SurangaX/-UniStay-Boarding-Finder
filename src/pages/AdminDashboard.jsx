@@ -1,26 +1,45 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Loader2, CheckCircle, FileText, CheckCircle2, XCircle, ExternalLink, Eye, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Loader2, CheckCircle, FileText, CheckCircle2, XCircle, ExternalLink, Eye, AlertCircle, Flame } from 'lucide-react';
 import { Navigate, Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [ads, setAds] = useState([]);
   const [verifications, setVerifications] = useState([]);
+  const [boosts, setBoosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'active', or 'verifications'
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'active', 'verifications', or 'boosts'
   const [selectedDoc, setSelectedDoc] = useState(null); // Document preview modal
 
   useEffect(() => {
     if (user?.role === 'admin') {
       if (activeTab === 'verifications') {
         fetchVerifications();
+      } else if (activeTab === 'boosts') {
+        fetchBoosts();
       } else {
         fetchAds();
       }
     }
   }, [user, activeTab]);
+
+  const fetchBoosts = async () => {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('/api/boosts', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setBoosts(data);
+    } catch (err) {
+      console.error('Failed to fetch boosts', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchAds = async () => {
     setLoading(true);
@@ -124,6 +143,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateBoostStatus = async (id, status) => {
+    const actionLabel = status === 'approved' ? 'Approve & Activate Boost' : 'Reject';
+    if (!window.confirm(`Are you sure you want to ${actionLabel} this boost request?`)) return;
+
+    setProcessingId(id);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('/api/boosts', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ id, status })
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setBoosts(prev => prev.map(b => b.id === id ? { ...b, ...updated } : b));
+        alert(`Boost request successfully marked as ${status}!`);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update boost status');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error occurred while updating boost');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (user?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
@@ -159,6 +210,18 @@ export default function AdminDashboard() {
             {verifications.filter(v => v.status === 'pending').length > 0 && (
               <span className="px-2 py-0.5 bg-amber-500 text-white rounded-full text-xs font-bold">
                 {verifications.filter(v => v.status === 'pending').length}
+              </span>
+            )}
+          </button>
+          <button 
+            className={`flex-1 min-w-[160px] py-4 text-center font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'boosts' ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400 font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            onClick={() => setActiveTab('boosts')}
+          >
+            <Flame className="w-4 h-4 text-amber-500" />
+            <span>Boost Requests</span>
+            {boosts.filter(b => b.status === 'pending').length > 0 && (
+              <span className="px-2 py-0.5 bg-amber-500 text-white rounded-full text-xs font-bold">
+                {boosts.filter(b => b.status === 'pending').length}
               </span>
             )}
           </button>
@@ -270,6 +333,99 @@ export default function AdminDashboard() {
                               className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
                               {processingId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                              Reject
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : activeTab === 'boosts' ? (
+          /* Boost Requests Tab */
+          boosts.length === 0 ? (
+            <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500 opacity-50" />
+              <p className="text-lg font-medium">No boost requests right now</p>
+              <p className="text-sm">Landlord ad boost applications with deposit slips will appear here.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                  <tr>
+                    <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Accommodation</th>
+                    <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Landlord Details</th>
+                    <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Package & Days</th>
+                    <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Payment Proof</th>
+                    <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Status</th>
+                    <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {boosts.map(b => (
+                    <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="p-4 font-semibold text-slate-900 dark:text-white">
+                        <Link to={`/accommodation/${b.accommodation_id}`} className="hover:text-brand-600 dark:hover:text-brand-400 hover:underline">
+                          {b.accommodation_title}
+                        </Link>
+                        <div className="text-[11px] text-slate-400 font-normal mt-0.5">Applied: {new Date(b.created_at).toLocaleDateString()}</div>
+                      </td>
+                      <td className="p-4 text-xs text-slate-700 dark:text-slate-300">
+                        <div className="font-bold text-slate-900 dark:text-white">{b.landlord_name}</div>
+                        <div>{b.landlord_phone || b.landlord_email}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{b.package_name}</div>
+                        <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold">LKR {b.package_amount} • {b.boost_days} Days</div>
+                      </td>
+                      <td className="p-4">
+                        {b.payment_slip_url && (
+                          <button 
+                            onClick={() => setSelectedDoc({ title: `Boost Slip - ${b.accommodation_title}`, url: b.payment_slip_url })}
+                            className="text-amber-600 hover:text-amber-700 dark:text-amber-400 flex items-center gap-1 font-bold text-xs hover:underline"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View Deposit Slip
+                          </button>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        {b.status === 'approved' ? (
+                          <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full font-bold flex items-center gap-1 w-fit">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Active Boost
+                          </span>
+                        ) : b.status === 'rejected' ? (
+                          <span className="px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-full font-bold flex items-center gap-1 w-fit">
+                            <XCircle className="w-3.5 h-3.5" /> Rejected
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs rounded-full font-bold flex items-center gap-1 w-fit">
+                            <AlertCircle className="w-3.5 h-3.5" /> Pending Review
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          {b.status !== 'approved' && (
+                            <button 
+                              onClick={() => updateBoostStatus(b.id, 'approved')}
+                              disabled={processingId === b.id}
+                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
+                            >
+                              {processingId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5" />}
+                              Approve
+                            </button>
+                          )}
+                          {b.status !== 'rejected' && (
+                            <button 
+                              onClick={() => updateBoostStatus(b.id, 'rejected')}
+                              disabled={processingId === b.id}
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
+                            >
+                              {processingId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                               Reject
                             </button>
                           )}

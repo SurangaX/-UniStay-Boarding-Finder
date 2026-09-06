@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { PlusCircle, Loader2, MapPin, ShieldCheck, CheckCircle2, Clock, UploadCloud, FileText, CheckCircle } from 'lucide-react';
+import { PlusCircle, Loader2, MapPin, ShieldCheck, CheckCircle2, Clock, UploadCloud, FileText, CheckCircle, CreditCard, Zap, Flame } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -136,6 +136,13 @@ export default function Dashboard() {
     payment_slip_url: '',
     package_amount: 1490.00
   });
+
+  // Landlord Boost Application State
+  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [boostAcc, setBoostAcc] = useState(null);
+  const [boostSlipUrl, setBoostSlipUrl] = useState('');
+  const [boostSubmitting, setBoostSubmitting] = useState(false);
+  const [boostPackage, setBoostPackage] = useState({ name: 'Standard 7-Day Boost', days: 7, amount: 490.00 });
 
   useEffect(() => {
     if (user?.role === 'landlord') {
@@ -424,24 +431,67 @@ export default function Dashboard() {
     }
   };
 
-  const boostListing = async (id) => {
-    if (!window.confirm('Simulate payment of LKR 299 to boost this ad for 7 days?')) return;
-    
+  const openBoostModal = (acc) => {
+    setBoostAcc(acc);
+    setBoostSlipUrl('');
+    setBoostPackage({ name: 'Standard 7-Day Boost', days: 7, amount: 490.00 });
+    setShowBoostModal(true);
+  };
+
+  const handleBoostSlipUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2.5 * 1024 * 1024) {
+      alert('File size exceeds 2.5MB. Please upload a smaller receipt/photo.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setBoostSlipUrl(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const submitBoostRequest = async (e) => {
+    e.preventDefault();
+    if (!boostSlipUrl) {
+      alert('Please upload your bank deposit or mobile transfer slip.');
+      return;
+    }
+
+    setBoostSubmitting(true);
+    const token = localStorage.getItem('token');
+
     try {
-      const res = await fetch('/api/accommodations', {
-        method: 'PATCH',
-        body: JSON.stringify({ id, action: 'boost' })
+      const res = await fetch('/api/boosts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          accommodation_id: boostAcc.id,
+          package_name: boostPackage.name,
+          package_amount: boostPackage.amount,
+          boost_days: boostPackage.days,
+          payment_slip_url: boostSlipUrl
+        })
       });
+
       if (res.ok) {
-        const updatedAcc = await res.json();
-        setAccommodations(accommodations.map(a => a.id === id ? updatedAcc : a));
-        alert('Boost successful! Your ad is now prioritized for 7 days.');
+        setShowBoostModal(false);
+        alert('Boost request submitted! UniStay admin will review your deposit slip and prioritize your ad within 2-4 hours.');
       } else {
-        alert('Failed to boost listing');
+        const err = await res.json();
+        alert(err.error || 'Failed to submit boost request');
       }
     } catch (err) {
-      console.error('Boost error:', err);
-      alert('Error occurred while boosting listing');
+      console.error(err);
+      alert('Network error while submitting boost application');
+    } finally {
+      setBoostSubmitting(false);
     }
   };
 
@@ -686,8 +736,8 @@ export default function Dashboard() {
                   <td className="p-4 text-sm">
                     <div className="flex items-center gap-3">
                       {!acc.is_boosted && (
-                        <button onClick={() => boostListing(acc.id)} className="text-amber-500 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1">
-                          Boost
+                        <button onClick={() => openBoostModal(acc)} className="text-amber-500 hover:text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                          <Flame className="w-3.5 h-3.5" /> Boost Ad
                         </button>
                       )}
                       <button onClick={() => openEditForm(acc)} className="text-brand-600 dark:text-brand-400 font-medium hover:underline cursor-pointer">Edit</button>
@@ -784,6 +834,57 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* Payment Methods */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Payment Method</label>
+                <div className="space-y-2">
+                  {/* Method 1: Bank Transfer (Active) */}
+                  <div className="p-3 border-2 border-blue-500 rounded-xl bg-blue-50/20 dark:bg-blue-950/10 flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="verify_payment" 
+                        checked={true} 
+                        readOnly 
+                        className="text-blue-600 focus:ring-blue-500 h-4 w-4"
+                      />
+                      <div>
+                        <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                          Bank Transfer / Cash Deposit
+                          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full">Admin Approved</span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Upload bank deposit slip for manual verification</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Method 2: Card Payment (Disabled / Grayed Out) */}
+                  <div className="p-3 border border-slate-200 dark:border-slate-700/60 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 opacity-60 flex items-center justify-between cursor-not-allowed select-none">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="verify_payment" 
+                        disabled 
+                        className="h-4 w-4 text-slate-400"
+                      />
+                      <div>
+                        <div className="font-semibold text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-slate-400" />
+                          <span>Credit / Debit Card (Visa, MasterCard)</span>
+                        </div>
+                        <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                          <Zap className="w-3 h-3 text-amber-500" />
+                          <span>Instant Activation</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase rounded-md tracking-wider">
+                      Coming Soon
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Document Uploads */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Required Verification Documents</h4>
@@ -857,6 +958,172 @@ export default function Dashboard() {
                     <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
                   ) : (
                     'Submit Verification Application'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Boost Modal */}
+      {showBoostModal && boostAcc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-8 border border-slate-200 dark:border-slate-700">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-start bg-slate-50 dark:bg-slate-900/40">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="p-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-lg">
+                    <Flame className="w-5 h-5" />
+                  </span>
+                  <h3 className="font-bold text-xl text-slate-900 dark:text-white">Boost Listing Priority</h3>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Put <span className="font-semibold text-slate-700 dark:text-slate-200">"{boostAcc.title}"</span> at the very top of campus search results.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowBoostModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={submitBoostRequest} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* Package Selection */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Select Boost Duration</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBoostPackage({ name: 'Standard 7-Day Boost', days: 7, amount: 490.00 })}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      boostPackage.days === 7 
+                        ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 ring-2 ring-amber-500/20' 
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="font-bold text-sm">7 Days Boost</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top priority feed</div>
+                    <div className="font-extrabold text-amber-600 dark:text-amber-400 mt-2 text-base">LKR 490</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBoostPackage({ name: 'Pro 30-Day Boost', days: 30, amount: 1490.00 })}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      boostPackage.days === 30 
+                        ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 ring-2 ring-amber-500/20' 
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm">30 Days Boost</span>
+                      <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold">Best</span>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Full semester reach</div>
+                    <div className="font-extrabold text-amber-600 dark:text-amber-400 mt-2 text-base">LKR 1,490</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Payment Method</label>
+                <div className="space-y-2">
+                  {/* Method 1: Bank Transfer (Active) */}
+                  <div className="p-3 border-2 border-amber-500 rounded-xl bg-amber-50/20 dark:bg-amber-950/10 flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="boost_payment" 
+                        checked={true} 
+                        readOnly 
+                        className="text-amber-600 focus:ring-amber-500 h-4 w-4"
+                      />
+                      <div>
+                        <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                          Bank Transfer / Cash Deposit
+                          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full">Admin Approved</span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Upload deposit slip for manual verification</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Method 2: Card Payment (Disabled / Grayed Out) */}
+                  <div className="p-3 border border-slate-200 dark:border-slate-700/60 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 opacity-60 flex items-center justify-between cursor-not-allowed select-none">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="boost_payment" 
+                        disabled 
+                        className="h-4 w-4 text-slate-400"
+                      />
+                      <div>
+                        <div className="font-semibold text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-slate-400" />
+                          <span>Credit / Debit Card (Visa, MasterCard)</span>
+                        </div>
+                        <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                          <Zap className="w-3 h-3 text-amber-500" />
+                          <span>Instant Activation</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase rounded-md tracking-wider">
+                      Coming Soon
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Details & Slip Upload */}
+              <div className="space-y-3 pt-1">
+                <div className="p-3 border border-dashed border-amber-300 dark:border-amber-700/60 bg-amber-50/30 dark:bg-amber-950/20 rounded-xl">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Upload Bank Deposit Slip (LKR {boostPackage.amount}) *
+                    </span>
+                    {boostSlipUrl && (
+                      <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Attached
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 mb-2 p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                    <p className="font-medium text-slate-800 dark:text-slate-200">Deposit / Transfer Account:</p>
+                    <p>Bank: <span className="font-semibold">Bank of Ceylon (BOC)</span> | Branch: <span className="font-semibold">Campus Corporate</span></p>
+                    <p>Account: <span className="font-semibold">8492019482</span> | Name: <span className="font-semibold">UniStay Student Services Pvt Ltd</span></p>
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*,.pdf" 
+                    required 
+                    onChange={handleBoostSlipUpload}
+                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-800 dark:file:bg-amber-900/40 dark:file:text-amber-300"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowBoostModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={boostSubmitting}
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {boostSubmitting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Submitting Slip...</>
+                  ) : (
+                    `Submit Boost (LKR ${boostPackage.amount})`
                   )}
                 </button>
               </div>
