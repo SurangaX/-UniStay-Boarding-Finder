@@ -13,7 +13,7 @@ export const handler = async (event) => {
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'UniBoardingPortal/1.0 (safeboarding.netlify.app)',
+        'User-Agent': 'UniStayPortal/1.0 (https://unistaylk.netlify.app)',
         'Accept-Language': 'en-US,en;q=0.9',
       },
     });
