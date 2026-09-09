@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2, School } from 'lucide-react';
+import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2, School, Sparkles, Flame, ArrowRight, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import AccommodationCard from '../components/AccommodationCard';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -114,6 +115,37 @@ export default function Home() {
       setMapPosition([parseFloat(place.lat), parseFloat(place.lon)]);
     }
   };
+
+  const [featuredListings, setFeaturedListings] = useState([]);
+  const [recentListings, setRecentListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setListingsLoading(true);
+        const res = await fetch('/api/accommodations');
+        if (res.ok) {
+          const data = await res.json();
+          // Featured: prioritized by is_boosted, then fallback to verified
+          const boosted = data.filter(a => a.is_boosted);
+          const nonBoostedVerified = data.filter(a => !a.is_boosted && a.is_verified);
+          const combinedFeatured = [...boosted, ...nonBoostedVerified].slice(0, 4);
+          setFeaturedListings(combinedFeatured.length > 0 ? combinedFeatured : data.slice(0, 4));
+
+          // Recently added: sorted by created_at DESC
+          const sortedRecent = [...data].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 8);
+          setRecentListings(sortedRecent);
+        }
+      } catch (err) {
+        console.error('Failed to fetch home listings:', err);
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, []);
 
   useEffect(() => {
     try {
@@ -336,6 +368,76 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Featured Accommodations */}
+      {featuredListings.length > 0 && (
+        <div className="py-16 bg-white dark:bg-slate-950 transition-colors duration-200 border-t border-slate-100 dark:border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
+                  <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <span>Editor's Choice & Promoted</span>
+                </div>
+                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                  Featured Accommodations
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Hand-picked student homes, high-rated stays, and verified host partners
+                </p>
+              </div>
+              <Link 
+                to="/search" 
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors group"
+              >
+                <span>View all listings</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredListings.map(acc => (
+                <AccommodationCard key={`featured-${acc.id}`} acc={acc} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recently Added */}
+      {recentListings.length > 0 && (
+        <div className="py-16 bg-slate-50 dark:bg-slate-900/50 transition-colors duration-200 border-t border-slate-200/60 dark:border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 text-brand-600 dark:text-brand-400 text-xs font-bold uppercase tracking-wider mb-2">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Fresh on UniStay</span>
+                </div>
+                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                  Recently Added
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  The latest boarding places and rooms listed by local landlords
+                </p>
+              </div>
+              <Link 
+                to="/search" 
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors group"
+              >
+                <span>Browse all new</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentListings.map(acc => (
+                <AccommodationCard key={`recent-${acc.id}`} acc={acc} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recently Viewed */}
       {recentlyViewed.length > 0 && (
