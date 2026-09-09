@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AccommodationCard from '../components/AccommodationCard';
+import AccommodationCardSkeleton from '../components/AccommodationCardSkeleton';
 import { Loader2, School } from 'lucide-react';
 import { SRI_LANKAN_UNIVERSITIES, calculateHaversineDistance } from '../data/universities';
 
@@ -191,8 +192,10 @@ export default function SearchResults() {
           </h1>
           
           {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <AccommodationCardSkeleton key={`skeleton-${i}`} />
+              ))}
             </div>
           ) : accommodations.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 p-10 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 text-center">

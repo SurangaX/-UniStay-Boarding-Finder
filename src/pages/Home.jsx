@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2, School, Sparkles, Flame, ArrowRight, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AccommodationCard from '../components/AccommodationCard';
+import AccommodationCardSkeleton from '../components/AccommodationCardSkeleton';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -370,7 +371,7 @@ export default function Home() {
       </div>
 
       {/* Featured Accommodations */}
-      {featuredListings.length > 0 && (
+      {(listingsLoading || featuredListings.length > 0) && (
         <div className="py-16 bg-white dark:bg-slate-950 transition-colors duration-200 border-t border-slate-100 dark:border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
@@ -396,9 +397,15 @@ export default function Home() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredListings.map(acc => (
-                <AccommodationCard key={`featured-${acc.id}`} acc={acc} />
-              ))}
+              {listingsLoading ? (
+                [...Array(4)].map((_, i) => (
+                  <AccommodationCardSkeleton key={`featured-skeleton-${i}`} />
+                ))
+              ) : (
+                featuredListings.map(acc => (
+                  <AccommodationCard key={`featured-${acc.id}`} acc={acc} />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -419,7 +426,7 @@ export default function Home() {
       )}
 
       {/* Recently Added */}
-      {recentListings.length > 0 && (
+      {(listingsLoading || recentListings.length > 0) && (
         <div className="py-16 bg-white dark:bg-slate-950 transition-colors duration-200 border-t border-slate-100 dark:border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
@@ -445,9 +452,15 @@ export default function Home() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentListings.map(acc => (
-                <AccommodationCard key={`recent-${acc.id}`} acc={acc} />
-              ))}
+              {listingsLoading ? (
+                [...Array(4)].map((_, i) => (
+                  <AccommodationCardSkeleton key={`recent-skeleton-${i}`} />
+                ))
+              ) : (
+                recentListings.map(acc => (
+                  <AccommodationCard key={`recent-${acc.id}`} acc={acc} />
+                ))
+              )}
             </div>
           </div>
         </div>
