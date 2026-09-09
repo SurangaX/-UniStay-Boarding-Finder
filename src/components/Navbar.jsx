@@ -85,9 +85,15 @@ export default function Navbar() {
                   <Link to="/search" className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors whitespace-nowrap px-1 py-1">
                     Browse Ads
                   </Link>
-                  <Link to="/login" className="btn-primary text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                  <Link 
+                    to="/login" 
+                    className="bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-colors duration-200"
+                  >
                     <UserCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span>Log in / Sign up</span>
+                    <span>
+                      <span className="inline sm:hidden">Log in</span>
+                      <span className="hidden sm:inline">Log in / Sign up</span>
+                    </span>
                   </Link>
                 </div>
               )
