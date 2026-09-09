@@ -34,7 +34,7 @@ export default function Navbar() {
                   <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                     Home
                   </Link>
-                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors whitespace-nowrap">
                     Browse Ads
                   </Link>
                   {user.role === 'admin' && (
@@ -78,14 +78,14 @@ export default function Navbar() {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                   <Link to="/" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
                     Home
                   </Link>
-                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors hidden sm:block">
+                  <Link to="/search" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors whitespace-nowrap">
                     Browse Ads
                   </Link>
-                  <Link to="/login" className="btn-primary text-sm flex items-center gap-2">
+                  <Link to="/login" className="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                     <UserCircle2 className="w-4 h-4" />
                     <span>Log in / Sign up</span>
                   </Link>
