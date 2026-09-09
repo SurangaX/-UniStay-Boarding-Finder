@@ -9,7 +9,7 @@ export default function AdminDashboard() {
   const [verifications, setVerifications] = useState([]);
   const [boosts, setBoosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState(null);
+  const [processingAction, setProcessingAction] = useState({ id: null, type: null });
   const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'active', 'verifications', or 'boosts'
   const [selectedDoc, setSelectedDoc] = useState(null); // Document preview modal
 
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
   };
 
   const approveAd = async (id) => {
-    setProcessingId(id);
+    setProcessingAction({ id, type: 'approve' });
     try {
       const res = await fetch('/api/accommodations', {
         method: 'PATCH',
@@ -86,13 +86,13 @@ export default function AdminDashboard() {
       console.error(err);
       alert('Error occurred while approving ad');
     } finally {
-      setProcessingId(null);
+      setProcessingAction({ id: null, type: null });
     }
   };
 
   const deleteAd = async (id) => {
     if (!window.confirm('Are you sure you want to delete this accommodation? This cannot be undone.')) return;
-    setProcessingId(id);
+    setProcessingAction({ id, type: 'delete' });
     try {
       const res = await fetch('/api/accommodations', {
         method: 'DELETE',
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
       console.error(err);
       alert('Error occurred while deleting ad');
     } finally {
-      setProcessingId(null);
+      setProcessingAction({ id: null, type: null });
     }
   };
 
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
     const actionLabel = status === 'approved' ? 'Approve & Verify' : 'Reject';
     if (!window.confirm(`Are you sure you want to ${actionLabel} this landlord verification?`)) return;
 
-    setProcessingId(id);
+    setProcessingAction({ id, type: status });
     const token = localStorage.getItem('token');
     try {
       const res = await fetch('/api/verifications', {
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
       console.error(err);
       alert('Error occurred while updating verification');
     } finally {
-      setProcessingId(null);
+      setProcessingAction({ id: null, type: null });
     }
   };
 
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
     const actionLabel = status === 'approved' ? 'Approve & Activate Boost' : 'Reject';
     if (!window.confirm(`Are you sure you want to ${actionLabel} this boost request?`)) return;
 
-    setProcessingId(id);
+    setProcessingAction({ id, type: status });
     const token = localStorage.getItem('token');
     try {
       const res = await fetch('/api/boosts', {
@@ -319,20 +319,20 @@ export default function AdminDashboard() {
                           {app.status !== 'approved' && (
                             <button 
                               onClick={() => updateVerificationStatus(app.id, 'approved')}
-                              disabled={processingId === app.id}
+                              disabled={processingAction.id === app.id}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
-                              {processingId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                              {processingAction.id === app.id && processingAction.type === 'approved' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                               Approve
                             </button>
                           )}
                           {app.status !== 'rejected' && (
                             <button 
                               onClick={() => updateVerificationStatus(app.id, 'rejected')}
-                              disabled={processingId === app.id}
+                              disabled={processingAction.id === app.id}
                               className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
-                              {processingId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                              {processingAction.id === app.id && processingAction.type === 'rejected' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                               Reject
                             </button>
                           )}
@@ -412,20 +412,20 @@ export default function AdminDashboard() {
                           {b.status !== 'approved' && (
                             <button 
                               onClick={() => updateBoostStatus(b.id, 'approved')}
-                              disabled={processingId === b.id}
+                              disabled={processingAction.id === b.id}
                               className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
-                              {processingId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5" />}
+                              {processingAction.id === b.id && processingAction.type === 'approved' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5" />}
                               Approve
                             </button>
                           )}
                           {b.status !== 'rejected' && (
                             <button 
                               onClick={() => updateBoostStatus(b.id, 'rejected')}
-                              disabled={processingId === b.id}
+                              disabled={processingAction.id === b.id}
                               className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
-                              {processingId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                              {processingAction.id === b.id && processingAction.type === 'rejected' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                               Reject
                             </button>
                           )}
@@ -487,10 +487,10 @@ export default function AdminDashboard() {
                           {activeTab === 'pending' && (
                             <button 
                               onClick={() => approveAd(ad.id)} 
-                              disabled={processingId === ad.id}
+                              disabled={processingAction.id === ad.id}
                               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
                             >
-                              {processingId === ad.id ? (
+                              {processingAction.id === ad.id && processingAction.type === 'approve' ? (
                                 <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
                               ) : (
                                 'Approve'
@@ -499,10 +499,10 @@ export default function AdminDashboard() {
                           )}
                           <button 
                             onClick={() => deleteAd(ad.id)} 
-                            disabled={processingId === ad.id}
+                            disabled={processingAction.id === ad.id}
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
                           >
-                            {processingId === ad.id ? (
+                            {processingAction.id === ad.id && processingAction.type === 'delete' ? (
                               <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
                             ) : (
                               'Delete'
