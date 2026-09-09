@@ -168,7 +168,7 @@ export default function AccommodationDetail() {
                 ~{walkMinutes} mins walk to University Gate ({acc.distance_to_uni} km)
               </span>
             )}
-            {acc.is_verified && <span className="flex items-center text-brand-600 dark:text-brand-400 font-medium text-sm"><ShieldCheck className="w-4 h-4 mr-1" /> Campus Approved</span>}
+            {acc.is_verified && <span className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium text-sm"><ShieldCheck className="w-4 h-4 mr-1 text-emerald-600 dark:text-emerald-400" /> Admin Approved</span>}
           </div>
         </div>
 

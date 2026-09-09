@@ -124,9 +124,9 @@ export default function AccommodationCard({ acc }) {
                 <X className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
               </button>
               {acc.is_verified && (
-                <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400 shadow-sm border border-brand-200 dark:border-brand-800">
-                  <BadgeCheck className="w-4 h-4 text-brand-500" />
-                  Verified by Senior Students
+                <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-200 dark:border-emerald-800">
+                  <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                  Admin Approved
                 </div>
               )}
             </div>
