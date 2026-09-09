@@ -404,9 +404,23 @@ export default function Home() {
         </div>
       )}
 
+      {/* Recently Viewed */}
+      {recentlyViewed.length > 0 && (
+        <div className="py-16 bg-slate-50 dark:bg-slate-900/40 transition-colors duration-200 border-t border-slate-200/60 dark:border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Recently Viewed</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentlyViewed.map(acc => (
+                <AccommodationCard key={acc.id} acc={acc} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Recently Added */}
       {recentListings.length > 0 && (
-        <div className="py-16 bg-slate-50 dark:bg-slate-900/50 transition-colors duration-200 border-t border-slate-200/60 dark:border-slate-800">
+        <div className="py-16 bg-white dark:bg-slate-950 transition-colors duration-200 border-t border-slate-100 dark:border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
               <div>
@@ -433,20 +447,6 @@ export default function Home() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {recentListings.map(acc => (
                 <AccommodationCard key={`recent-${acc.id}`} acc={acc} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recently Viewed */}
-      {recentlyViewed.length > 0 && (
-        <div className="py-16 bg-white dark:bg-slate-950 transition-colors duration-200 border-t border-slate-100 dark:border-slate-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Recently Viewed</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentlyViewed.map(acc => (
-                <AccommodationCard key={acc.id} acc={acc} />
               ))}
             </div>
           </div>
