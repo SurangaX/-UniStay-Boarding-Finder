@@ -49,6 +49,10 @@ export const handler = async (event) => {
 
     return {
       statusCode: 201,
+      headers: {
+        'Set-Cookie': `auth_token=${token}; Path=/; Max-Age=604800; SameSite=Lax; Secure`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         token,
         user

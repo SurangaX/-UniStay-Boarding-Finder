@@ -37,7 +37,14 @@ export const handler = async (event) => {
         if (accs.length === 0) {
           return { statusCode: 404, body: JSON.stringify({ error: 'Not found' }) };
         }
-        return { statusCode: 200, body: JSON.stringify(accs[0]) };
+        return { 
+          statusCode: 200, 
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=120'
+          },
+          body: JSON.stringify(accs[0]) 
+        };
       }
 
       if (landlord_id) {
@@ -75,7 +82,7 @@ export const handler = async (event) => {
         return { statusCode: 200, body: JSON.stringify(accs) };
       }
 
-      // List all verified accommodations for public
+      // List all verified accommodations for public (Cached for 60s, stale-while-revalidate 120s)
       const accs = await sql`
         SELECT a.*, u.contact_number as landlord_phone, u.whatsapp_number as landlord_whatsapp, u.is_verified_landlord as landlord_verified
         FROM accommodations a
@@ -83,7 +90,14 @@ export const handler = async (event) => {
         WHERE a.is_verified = TRUE 
         ORDER BY a.is_boosted DESC, a.created_at DESC
       `;
-      return { statusCode: 200, body: JSON.stringify(accs) };
+      return { 
+        statusCode: 200, 
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=120'
+        },
+        body: JSON.stringify(accs) 
+      };
     }
 
     if (event.httpMethod === 'POST') {

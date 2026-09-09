@@ -29,6 +29,7 @@ export const handler = async (event) => {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*', // Enable CORS for the frontend
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=86400'
       },
       body: JSON.stringify(data),
     };
