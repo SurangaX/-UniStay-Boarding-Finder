@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2, School, Sparkles, Flame, ArrowRight, Clock } from 'lucide-react';
+import { Search, ShieldCheck, MapPin, Home as HomeIcon, Loader2, School, Sparkles, Flame, ArrowRight, Clock, Eye, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AccommodationCard from '../components/AccommodationCard';
 import AccommodationCardSkeleton from '../components/AccommodationCardSkeleton';
@@ -413,12 +413,37 @@ export default function Home() {
 
       {/* Recently Viewed */}
       {recentlyViewed.length > 0 && (
-        <div className="py-16 bg-slate-50 dark:bg-slate-900/40 transition-colors duration-200 border-t border-slate-200/60 dark:border-slate-800">
+        <div className="py-16 bg-slate-50 dark:bg-slate-900/50 transition-colors duration-200 border-t border-slate-200/60 dark:border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Recently Viewed</h2>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Your Activity</span>
+                </div>
+                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                  Recently Viewed
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Places and rooms you looked at during this session
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('recently_viewed');
+                  setRecentlyViewed([]);
+                }}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
+                title="Clear viewed history"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Clear history</span>
+              </button>
+            </div>
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {recentlyViewed.map(acc => (
-                <AccommodationCard key={acc.id} acc={acc} />
+                <AccommodationCard key={`viewed-${acc.id}`} acc={acc} />
               ))}
             </div>
           </div>
