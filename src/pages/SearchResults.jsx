@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AccommodationCard from '../components/AccommodationCard';
 import AccommodationCardSkeleton from '../components/AccommodationCardSkeleton';
-import { Loader2, School } from 'lucide-react';
+import { Loader2, School, MapPin } from 'lucide-react';
 import { SRI_LANKAN_UNIVERSITIES, calculateHaversineDistance } from '../data/universities';
 
 export default function SearchResults() {
@@ -19,6 +19,49 @@ export default function SearchResults() {
   const [budget, setBudget] = useState(initialBudget);
   const [maxDistance, setMaxDistance] = useState(initialDistance);
   const [selectedUniId, setSelectedUniId] = useState(initialUni);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            const parts = [];
+            if (data.address.suburb) parts.push(data.address.suburb);
+            if (data.address.city || data.address.town || data.address.village) {
+              parts.push(data.address.city || data.address.town || data.address.village);
+            }
+            const foundLoc = parts.length > 0 ? parts.join(', ') : (data.address.road || data.display_name.split(',')[0]);
+            setLocation(foundLoc);
+            applyFilters(foundLoc, budget, maxDistance, selectedUniId);
+          } else {
+            setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+            applyFilters(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`, budget, maxDistance, selectedUniId);
+          }
+        } catch (err) {
+          console.error('Geocoding error:', err);
+          alert('Could not resolve your location name. Please type it in manually.');
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (err) => {
+        console.error('Geolocation error:', err);
+        alert('Unable to retrieve your location. Please check browser permissions.');
+        setGettingLocation(false);
+      },
+      { timeout: 10000 }
+    );
+  };
 
   // Keep state synchronized whenever URL search params change
   useEffect(() => {
@@ -112,14 +155,50 @@ export default function SearchResults() {
             <h2 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Filters</h2>
             <form onSubmit={updateFilters}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Colombo"
-                  className="input-field"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Location</label>
+                  <button
+                    type="button"
+                    onClick={handleUseMyLocation}
+                    disabled={gettingLocation}
+                    className="inline-flex items-center gap-1 text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-semibold transition-colors disabled:opacity-50"
+                    title="Use my current location"
+                  >
+                    {gettingLocation ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Locating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Use my location</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Colombo"
+                    className="input-field pr-9"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUseMyLocation}
+                    disabled={gettingLocation}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 p-1 rounded transition-colors disabled:opacity-50"
+                    title="Use my current location"
+                  >
+                    {gettingLocation ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+                    ) : (
+                      <MapPin className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Rent (LKR)</label>
