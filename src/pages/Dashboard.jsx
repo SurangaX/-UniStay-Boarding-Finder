@@ -57,28 +57,6 @@ function MapUpdater({ position }) {
   return null;
 }
 
-function MobileMapTouchHandler({ isMobileActive }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!map) return;
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    if (isTouchDevice && window.innerWidth <= 768) {
-      if (isMobileActive) {
-        map.dragging.enable();
-        if (map.touchZoom) map.touchZoom.enable();
-      } else {
-        map.dragging.disable();
-        if (map.touchZoom) map.touchZoom.enable();
-      }
-    } else {
-      map.dragging.enable();
-    }
-  }, [map, isMobileActive]);
-
-  return null;
-}
-
 export default function Dashboard() {
   const { user } = useAuth();
   const [accommodations, setAccommodations] = useState([]);
@@ -92,7 +70,6 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [mapPosition, setMapPosition] = useState(null); // Initialize with null until clicked
-  const [isMobileMapActive, setIsMobileMapActive] = useState(false);
   const [rentAmount, setRentAmount] = useState('');
   const [distance, setDistance] = useState('');
   const [targetUni, setTargetUni] = useState('');
@@ -631,8 +608,6 @@ export default function Dashboard() {
                 <MapContainer 
                   center={[6.9271, 79.8612]} // Default to Colombo
                   zoom={12} 
-                  scrollWheelZoom={false}
-                  tap={false}
                   style={{ height: '100%', width: '100%' }}
                 >
                   <TileLayer
@@ -640,25 +615,8 @@ export default function Dashboard() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <MapUpdater position={mapPosition} />
-                  <MobileMapTouchHandler isMobileActive={isMobileMapActive} />
                   <MapLocationPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} />
                 </MapContainer>
-
-                {/* Mobile Tap-to-Interact Badge */}
-                <div className="md:hidden absolute bottom-2 left-2 z-[1000]">
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileMapActive(!isMobileMapActive)}
-                    className={`text-[11px] px-2 py-1 rounded-md font-medium shadow-md transition-all flex items-center gap-1 backdrop-blur-sm ${
-                      isMobileMapActive 
-                        ? 'bg-brand-600 text-white ring-2 ring-brand-400' 
-                        : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                    }`}
-                  >
-                    <MapPin className="w-3 h-3 text-brand-500" />
-                    <span>{isMobileMapActive ? 'Map Active (Tap to lock)' : 'Tap to drag map'}</span>
-                  </button>
-                </div>
               </div>
               <div className="relative mt-3" ref={wrapperRef}>
                 <input 
