@@ -61,6 +61,28 @@ function MapUpdater({ position }) {
   return null;
 }
 
+function MobileMapTouchHandler({ isMobileActive, setIsMobileActive }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouchDevice && window.innerWidth <= 768) {
+      if (isMobileActive) {
+        map.dragging.enable();
+        if (map.touchZoom) map.touchZoom.enable();
+      } else {
+        map.dragging.disable();
+        if (map.touchZoom) map.touchZoom.enable(); // pinch-to-zoom always works smoothly
+      }
+    } else {
+      map.dragging.enable();
+    }
+  }, [map, isMobileActive]);
+
+  return null;
+}
+
 export default function Home() {
   const [selectedUni, setSelectedUni] = useState('');
   const [location, setLocation] = useState('');
@@ -68,6 +90,7 @@ export default function Home() {
   const [maxDistance, setMaxDistance] = useState('');
   const [mapPosition, setMapPosition] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [isMobileMapActive, setIsMobileMapActive] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -233,6 +256,8 @@ export default function Home() {
               <MapContainer 
                 center={[6.9271, 79.8612]} // Default to Colombo
                 zoom={11} 
+                scrollWheelZoom={false}
+                tap={false}
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
@@ -240,8 +265,26 @@ export default function Home() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <MapUpdater position={mapPosition} />
+                <MobileMapTouchHandler isMobileActive={isMobileMapActive} setIsMobileActive={setIsMobileMapActive} />
                 <HomeMapPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} setGettingLocation={setGettingLocation} />
               </MapContainer>
+
+              {/* Mobile Tap-to-Interact Badge/Toggle */}
+              <div className="md:hidden absolute bottom-2 left-2 z-[1000]">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMapActive(!isMobileMapActive)}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg font-medium shadow-md transition-all flex items-center gap-1.5 backdrop-blur-sm ${
+                    isMobileMapActive 
+                      ? 'bg-brand-600 text-white shadow-brand-500/20 ring-2 ring-brand-400' 
+                      : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <MapPin className="w-3.5 h-3.5 text-brand-500" />
+                  <span>{isMobileMapActive ? 'Map Active (Tap to lock page scroll)' : 'Tap map to interact / scroll page freely'}</span>
+                </button>
+              </div>
+
               <div className="absolute top-2 right-2 z-[1000]">
                 <button 
                   type="button" 
