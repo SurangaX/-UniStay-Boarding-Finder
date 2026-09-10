@@ -61,6 +61,26 @@ function MapUpdater({ position }) {
   return null;
 }
 
+function MobileTouchController({ isActive, setIsActive }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouch && window.innerWidth <= 768) {
+      if (isActive) {
+        map.dragging.enable();
+      } else {
+        map.dragging.disable();
+      }
+    } else {
+      map.dragging.enable();
+    }
+  }, [map, isActive]);
+
+  return null;
+}
+
 export default function Home() {
   const [selectedUni, setSelectedUni] = useState('');
   const [location, setLocation] = useState('');
@@ -68,6 +88,7 @@ export default function Home() {
   const [maxDistance, setMaxDistance] = useState('');
   const [mapPosition, setMapPosition] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [isMapActive, setIsMapActive] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -229,10 +250,14 @@ export default function Home() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-4 w-full max-w-5xl border border-slate-100 dark:border-slate-800 transition-colors text-left flex flex-col md:flex-row gap-6">
             
             {/* Map Container */}
-            <div className="w-full md:w-[50%] h-[300px] md:h-auto rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700 z-10">
+            <div 
+              className="w-full md:w-[50%] h-[300px] md:h-auto rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700 z-10"
+              onClick={() => setIsMapActive(true)}
+            >
               <MapContainer 
                 center={[6.9271, 79.8612]} // Default to Colombo
                 zoom={11} 
+                scrollWheelZoom={false}
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
@@ -240,8 +265,40 @@ export default function Home() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <MapUpdater position={mapPosition} />
+                <MobileTouchController isActive={isMapActive} setIsActive={setIsMapActive} />
                 <HomeMapPicker position={mapPosition} setPosition={setMapPosition} setLocation={setLocation} setGettingLocation={setGettingLocation} />
               </MapContainer>
+
+              {/* Mobile Tap-to-Activate overlay so page scrolls naturally until user taps the map */}
+              {!isMapActive && (
+                <div 
+                  className="md:hidden absolute inset-0 z-[500] bg-black/10 flex items-center justify-center cursor-pointer select-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMapActive(true);
+                  }}
+                >
+                  <div className="bg-slate-900/80 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5 pointer-events-none">
+                    <MapPin className="w-3.5 h-3.5 text-brand-400" />
+                    <span>Tap to interact with map</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Once active on mobile, show lock button to return to page scroll */}
+              {isMapActive && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMapActive(false);
+                  }}
+                  className="md:hidden absolute bottom-2 left-2 z-[1000] bg-slate-900/85 text-white text-[11px] font-medium px-2.5 py-1 rounded-md shadow-md backdrop-blur-sm"
+                >
+                  Done with map
+                </button>
+              )}
+
               <div className="absolute top-2 right-2 z-[1000]">
                 <button 
                   type="button" 
