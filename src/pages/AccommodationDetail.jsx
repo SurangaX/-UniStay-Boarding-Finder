@@ -150,9 +150,11 @@ export default function AccommodationDetail() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-blue-500/20">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Document & Landlord Verified
-            </span>
+            {acc.landlord_verified && (
+              <span className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-blue-500/20">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Document & Landlord Verified
+              </span>
+            )}
             <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold rounded-full text-xs flex items-center gap-1 border border-emerald-500/20">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Zero Broker Fee
             </span>

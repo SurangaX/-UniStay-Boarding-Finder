@@ -21,7 +21,6 @@ export default function AccommodationCard({ acc }) {
   const cleanPhone = targetWhatsapp.replace(/[^0-9]/g, '');
   const finalPhone = cleanPhone.startsWith('0') ? '94' + cleanPhone.slice(1) : (cleanPhone.startsWith('94') ? cleanPhone : '94' + cleanPhone);
   const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(`Hello, I found your boarding listing "${acc.title}" on UniStay and would like to arrange an inspection.`)}`;
-  const isListingVerified = acc.is_verified || acc.landlord_verified;
 
   return (
     <>
@@ -41,9 +40,9 @@ export default function AccommodationCard({ acc }) {
                 🔥 Boosted
               </div>
             )}
-            {isListingVerified && (
+            {acc.landlord_verified && (
               <span className="px-2.5 py-1 bg-blue-600/90 backdrop-blur-md text-white font-semibold rounded-full text-xs shadow-md flex items-center gap-1 border border-white/20">
-                <ShieldCheck className="w-3.5 h-3.5" /> Document & Landlord Verified
+                <ShieldCheck className="w-3.5 h-3.5" /> Verified Landlord
               </span>
             )}
           </div>
